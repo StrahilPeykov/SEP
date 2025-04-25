@@ -1,0 +1,39 @@
+include:
+  - template: SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+
+stages:
+  - build
+  - test
+  - deploy
+  - cleanup
+
+sast:
+  stage: test
+
+django_tests:
+  stage: test
+  image: python:3.12
+  variables:
+    DJANGO_SETTINGS_MODULE: "CarbonInsight.settings"
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    paths:
+      - .cache/pip
+  before_script:
+    - pip install --upgrade pip wheel
+    - pip install -r requirements.txt
+    - pip install unittest-xml-reporting
+  script:
+    - cd "$CI_PROJECT_DIR/CarbonInsight"
+    # Run migrations
+    - python manage.py migrate --noinput
+    # Run tests with xml output
+    - python manage.py test --verbosity=2 --testrunner="xmlrunner.extra.djangotestrunner.XMLTestRunner"
+  artifacts:
+    when: always
+    # GitLab will look here for JUnit XML files and show failures inline
+    reports:
+      junit:
+        - CarbonInsight/*.xml
+    untracked: true
