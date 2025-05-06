@@ -1,3 +1,37 @@
-from .user import User
+import reversion
+
+from .emission import Emission
 from .company import Company
 from .company_membership import CompanyMembership
+from .end_of_life_emission import EndOfLifeEmission, EndOfLifeEmissionReference, EndOfLifeEmissionReferenceFactor
+from .material_emission import MaterialEmission, MaterialEmissionReference, MaterialEmissionReferenceFactor
+from .product import Product
+from .product_bom_line_item import ProductBoMLineItem
+from .product_sharing_request import ProductSharingRequest
+from .production_energy_emission import ProductionEnergyEmission, ProductionEnergyEmissionReference, ProductionEnergyEmissionReferenceFactor
+from .transport_emission import TransportEmission, TransportEmissionReference, TransportEmissionReferenceFactor
+from .user import User
+from .user_energy_emission import UserEnergyEmission, UserEnergyEmissionReference, UserEnergyEmissionReferenceFactor
+
+reversion.register(Emission)
+reversion.register(Company)
+reversion.register(CompanyMembership)
+reversion.register(EndOfLifeEmission)
+reversion.register(EndOfLifeEmissionReference)
+reversion.register(EndOfLifeEmissionReferenceFactor)
+reversion.register(MaterialEmission)
+reversion.register(MaterialEmissionReference)
+reversion.register(MaterialEmissionReferenceFactor)
+reversion.register(Product)
+reversion.register(ProductBoMLineItem)
+reversion.register(ProductSharingRequest)
+reversion.register(ProductionEnergyEmission)
+reversion.register(ProductionEnergyEmissionReference)
+reversion.register(ProductionEnergyEmissionReferenceFactor)
+reversion.register(TransportEmission)
+reversion.register(TransportEmissionReference)
+reversion.register(TransportEmissionReferenceFactor)
+#reversion.register(User)
+reversion.register(UserEnergyEmission)
+reversion.register(UserEnergyEmissionReference)
+reversion.register(UserEnergyEmissionReferenceFactor)

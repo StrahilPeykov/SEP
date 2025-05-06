@@ -1,0 +1,227 @@
+@startuml Carbon Insight Class Diagram
+
+abstract class AbstractUser {
+  - id: String
+  - first_name: String
+  - last_name: String
+  - email: String
+}
+
+class Product {
+  - id: String
+  - name: String
+  - description: String
+  - manufacturer: Company
+  - emissions: List<Emission>
+  - co_2_emission_override: dict<LifecycleStage, float>
+  - parts: List<ProductBoMLineItem>
+  - is_public: boolean
+  + addPart(product: Product, quantity: float)
+  + removePart(product: Product)
+  + updatePartQuantity(product: Product, quantity: float)
+  + calculateEmissions(): Optional<dict<LifecycleStage, float>>
+  + generateDPP(): DigitalProductPassport
+  + exportProduct(product: Product, format: FileFormat): StreamIO
+  - exportAASX(): StreamIO
+  - exportXML(): StreamIO
+  - exportJSON(): StreamIO
+  - exportCSV(): StreamIO
+  - exportXLSX(): StreamIO
+  - exportPDF(): StreamIO
+}
+
+abstract class Emission {
+  - id: String
+  - co_2_emission_override: dict<LifecycleStage, float>
+  + calculateEmissions(): dict<LifecycleStage, float>
+}
+
+LifecycleStage "1" --> "*" Emission
+
+class User extends AbstractUser {
+}
+
+class CompanyMembership {
+  - id: String
+  - company: Company
+  - user: User
+}
+
+class Company {
+  - id: String
+  - name: String
+  - vat_number: String
+  - business_registration_number: String
+  - products: List<Product>
+  + hasAuthorization(user: User): boolean
+  + getEmissionStats(): EmissionStats
+}
+
+class MaterialEmissionReference {
+  - name: String
+  - co_2_factors: dict<LifecycleStage, float>
+}
+
+class MaterialEmission extends Emission {
+  - weight: float
+  - reference: MaterialEmissionReference
+  + calculateEmissions(): dict<LifecycleStage, float>
+}
+
+MaterialEmission "*" --> "1" MaterialEmissionReference : references
+
+class ProductBoMLineItem {
+  - product: Product
+  - quantity: float
+  - emissions: List<Emission>
+}
+
+ProductBoMLineItem "1" --> "*" Emission : has
+
+class TransportEmission extends Emission {
+  - distance: float
+  - weight: float
+  - reference: TransportEmissionReference
+  + calculateEmissions(): dict<LifecycleStage, float>
+}
+
+class ProductionEnergyEmission extends Emission {
+  - energy_consumption: float
+  - reference: ProductionEnergyEmissionReference
+  + calculateEmissions(): dict<LifecycleStage, float>
+}
+
+class UserEnergyEmission extends Emission {
+  - energy_consumption: float
+  - reference: UserEnergyEmissionReference
+  + calculateEmissions(): dict<LifecycleStage, float>
+}
+
+class EndOfLifeEmission extends Emission {
+  - weight: float
+  - reference: EndOfLifeEmissionReference
+  + calculateEmissions(): dict<LifecycleStage, float>
+}
+
+class ProductSharingRequest {
+  - id: String
+  - product: Product
+  - requester: Company
+  - provider: Company
+  - status: ProductSharingRequestStatus
+  - created_at: Date
+  - updated_at: Date
+  + approve()
+  + reject()
+}
+
+enum ProductSharingRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum FileFormat {
+  AASX
+  XML
+  JSON
+  CSV
+  XLSX
+  PDF
+}
+
+class DigitalProductPassport {
+  - id: String
+  - product: Product
+  - creation_date: Date
+  - version: String
+  - metadata: Map<String, String>
+  + generateAASX(): File
+  + export(format: String): File
+  + validate(): boolean
+}
+
+class EmissionStats {
+  - total_emissions: float
+  - emissions_by_category: Map<String, float>
+  - circularity_index: float
+  - environmental_cost: float
+  + generateReport(): File
+}
+
+class ProductImporter {
+  + importProduct(file: File, format: FileFormat)
+  + validateProductData(data: Any): boolean
+}
+
+class AIRecommendationEngine {
+  + generateRecommendations(product: Product): List<Recommendation>
+  + analyzeSupplyChain(product: Product): List<Recommendation>
+  + estimateEmissionReductions(recommendations: List<Recommendation>): Map<Recommendation, float>
+}
+
+class Recommendation {
+  - id: String
+  - description: String
+  - impact: float
+  - implementation_complexity: ComplexityLevel
+  - cost_estimate: float
+  - affected_areas: List<String>
+}
+
+enum ComplexityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+class ProductionEnergyEmissionReference {
+  - name: String
+  - co_2_factors:  dict<LifecycleStage, float>
+}
+
+class UserEnergyEmissionReference {
+  - name: String
+  - co_2_factors:  dict<LifecycleStage, float>
+}
+
+class TransportEmissionReference {
+  - name: String
+  - co_2_factors:  dict<LifecycleStage, float>
+}
+
+class EndOfLifeEmissionReference {
+  - name: String
+  - landfill_percentage: float
+  - incinerated_percentage: float
+  - recycled_percentage: float
+  - reused_percentage: float
+  - co_2_factors:  dict<LifecycleStage, float>
+}
+
+enum LifecycleStage {
+  A1-4
+  B1-7
+  C1-4
+  D
+}
+
+TransportEmission "*" --> "1" TransportEmissionReference : references
+ProductionEnergyEmission "*" --> "1" ProductionEnergyEmissionReference : references
+UserEnergyEmission "*" --> "1" UserEnergyEmissionReference : references
+EndOfLifeEmission "*" --> "1" EndOfLifeEmissionReference : references
+CompanyMembership "*" --> "1" User : belongs to
+Company "1" *--> "*" CompanyMembership : has members
+Company "1" *--> "*" Product : owns
+Product "1" *--> "*" Emission : has
+Product "1" *--> "*" ProductBoMLineItem : composed of
+ProductBoMLineItem "*" --> "1" Product : references
+ProductSharingRequest "*" --> "1" Product : references
+ProductSharingRequest "*" --> "1" Company : requested by
+ProductSharingRequest "*" --> "1" Company : provided by
+ProductSharingRequest "1" --> "1" ProductSharingRequestStatus : has status
+DigitalProductPassport "1" --> "1" Product : represents
+AIRecommendationEngine "1" --> "*" Recommendation : generates
+Recommendation "*" --> "1" ComplexityLevel : has
+ProductImporter --> Product: uses >
+@enduml

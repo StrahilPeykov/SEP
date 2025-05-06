@@ -1,0 +1,26 @@
+import sys
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from core.models import *
+from .company_admin import CompanyAdmin
+from .company_membership_admin import CompanyMembershipAdmin
+from .product_admin import ProductAdmin
+from .emission_admin import *
+from .end_of_life_emission_reference_admin import *
+from .material_emission_reference_admin import *
+from .production_energy_reference_emission_admin import *
+from .transport_reference_emission_admin import *
+from .user_energy_emission_admin import *
+
+admin.site.register(ProductSharingRequest, VersionAdmin)
+admin.site.register(User, UserAdmin)
+
+if 'runserver' in sys.argv:
+    admin.site.site_header = "CarbonInsight Admin [Local build]"
+    admin.site.site_title = "CarbonInsight Admin [Local build]"
+else:
+    admin.site.site_header = "CarbonInsight Admin [Production]"
+    admin.site.site_title = "CarbonInsight Admin [Production]"
+admin.site.index_title = "Welcome to the CarbonInsight admin portal"

@@ -23,17 +23,27 @@ django_tests:
   before_script:
     - pip install --upgrade pip wheel
     - pip install -r requirements.txt
-    - pip install unittest-xml-reporting
+    - pip install unittest-xml-reporting coverage
   script:
     - cd "$CI_PROJECT_DIR/CarbonInsight"
     # Run migrations
     - python manage.py migrate --noinput
     # Run tests with xml output
-    - python manage.py test --verbosity=2 --testrunner="xmlrunner.extra.djangotestrunner.XMLTestRunner"
+    - coverage run --source='.' manage.py test --verbosity=2 --testrunner="xmlrunner.extra.djangotestrunner.XMLTestRunner"
+    # Dump coverage report
+    - coverage xml -o coverage/cobertura-coverage.xml
+    - coverage html -d coverage/htmlcov
+    - coverage report
   artifacts:
     when: always
-    # GitLab will look here for JUnit XML files and show failures inline
+    # GitLab will look here for JUnit XML files and show failures inline. Same for coverage.
     reports:
       junit:
         - CarbonInsight/*.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: CarbonInsight/coverage/cobertura-coverage.xml
     untracked: true
+
+  # Parse coverage % from console output
+  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
