@@ -17,7 +17,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     serializer_class = CompanySerializer
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy', 'add_user', 'list_user', 'remove_user']:
+        if self.action in ['update', 'partial_update', 'destroy', 'add_user', 'list_users', 'remove_user']:
             return [permissions.IsAuthenticated(), IsCompanyMember()]
         return [permissions.IsAuthenticated()]
 
@@ -87,7 +87,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({"detail": "User not found"}, status=404)
         CompanyMembership.objects.get_or_create(user=user, company=company)
-        return Response({"status": "User added"})
+        return Response({"status": "User added"}, status=201)
 
     @extend_schema(
         summary="List all users in a company",

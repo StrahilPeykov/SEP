@@ -27,9 +27,9 @@ router.register(r"companies", CompanyViewSet)
 urlpatterns = [
     path("api/", include(router.urls)),
     path("api/register/", RegisterView.as_view({"post": "create"}), name="register"),
+    path("api/user_profile/", UserProfileView.as_view(), name="user_profile"),
     path("api/login/", LoginView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", RefreshView.as_view(), name="token_refresh"),
-    path("api/user/", get_user_profile, name="user_profile"),
     path("api/populate_db/", populate_db, name="populate_db"),
     path("api/destroy_db/", destroy_db, name="destroy_db"),
 ]
