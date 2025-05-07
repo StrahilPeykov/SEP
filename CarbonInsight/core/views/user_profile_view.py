@@ -13,10 +13,6 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         return self.request.user
 
-    def perform_update(self, serializer):
-        # Ensure that the username is the same as the email
-        serializer.save(username=self.request.user.email)
-
     def perform_destroy(self, instance):
         memberships = CompanyMembership.objects.filter(user=instance)
         for membership in memberships:

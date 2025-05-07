@@ -2,11 +2,12 @@ from django.contrib.auth import get_user_model
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core import serializers
 from core.models import Company, CompanyMembership
-from core.permissions import IsCompanyMemberOrReadOnly, IsCompanyMember
+from core.permissions import IsCompanyMember, CanEditCompany
 from core.serializers import CompanySerializer
 from core.serializers.user_serializer import UserUsernameSerializer, UserSerializer
 
@@ -15,11 +16,7 @@ User = get_user_model()
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-
-    def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy', 'add_user', 'list_users', 'remove_user']:
-            return [permissions.IsAuthenticated(), IsCompanyMember()]
-        return [permissions.IsAuthenticated()]
+    permission_classes = [IsAuthenticated, CanEditCompany]
 
     def get_serializer_class(self):
         if self.action in ["add_user", "remove_user"]:
@@ -79,7 +76,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Add a user to a company"
     )
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsCompanyMember])
     def add_user(self, request, pk=None):
         company = self.get_object()
         try:
@@ -92,7 +89,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="List all users in a company",
     )
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, IsCompanyMember])
     def list_users(self, request, pk=None):
         company = self.get_object()
         users = company.users.all()
@@ -102,7 +99,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Remove a user from a company"
     )
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsCompanyMember])
     def remove_user(self, request, pk=None):
         company = self.get_object()
         try:

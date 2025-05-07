@@ -14,7 +14,7 @@ class Company(models.Model):
         verbose_name_plural = "Companies"
         ordering = ["name"]
 
-    def user_has_permission(self, user) -> bool:
+    def user_is_member(self, user) -> bool:
         return self.users.filter(id=user.id).exists()
 
     def __str__(self):

@@ -1,34 +1,61 @@
 from rest_framework import permissions
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-class IsCompanyMemberOrReadOnly(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated:
-            return False
-        # Allow safe methods for everyone
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        # Allow unsafe methods only for company members
-        return obj.user_has_permission(request.user)
-
-
-class IsCompanyMember(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated:
-            return False
-        # Allow only company members
-        return obj.user_has_permission(request.user)
-
-
-class IsUserOrReadOnly(permissions.BasePermission):
+class IsCompanyMember(BasePermission):
     """
-    Custom permission to only allow users to edit their own profile.
+    Only allows access if request.user is a member of the Company instance.
     """
+    def has_object_permission(self, request, view, obj):
+        # obj is a Company
+        return obj.user_is_member(request.user)
+
+
+class CanEditCompany(BasePermission):
+    """
+    Allows POST on /companies/ to any authenticated user,
+    but PUT/PATCH/DELETE only if member of that company.
+    """
+    def has_permission(self, request, view):
+        # list and create are global actions:
+        if view.action in ('list', 'retrieve', 'create'):
+            return request.user and request.user.is_authenticated
+        # for other actions, will check object permission
+        return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any authenticated request
-        if request.method in permissions.SAFE_METHODS:
+        # only allow unsafe methods if member
+        if request.method in SAFE_METHODS:
             return True
+        return obj.user_is_member(request.user)
 
-        # Write permissions are only allowed to the user themselves
-        return obj == request.user
+
+class ProductPermission(BasePermission):
+    """
+    Handles:
+      - POST  -> only if you can edit parent company
+      - GET   -> if is_public or you can edit parent company
+      - PUT/PATCH/DELETE -> only if you can edit parent company
+    """
+    def _is_company_member(self, request, view):
+        company = view.get_parent_company()
+        return company.user_is_member(request.user)
+
+    def has_permission(self, request, view):
+        # Must be authenticated for everything
+        if not (request.user and request.user.is_authenticated):
+            return False
+
+        # POST: only if can edit parent
+        if view.action == 'create':
+            return self._is_company_member(request, view)
+
+        # GET list & retrieve: defer to object / get_queryset
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        # SAFE (GET detail) -> allow if public or member
+        if request.method in SAFE_METHODS:
+            return obj.is_public or self._is_company_member(request, view)
+        # unsafe -> only members
+        return self._is_company_member(request, view)

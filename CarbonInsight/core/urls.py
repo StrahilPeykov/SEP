@@ -15,18 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_nested.routers import NestedDefaultRouter
 
 from core.views import *
+from core.views.product_view_set import ProductViewSet
 
 router = DefaultRouter()
 router.register(r"companies", CompanyViewSet)
-router.register(r"users", UserViewSet)
+
+company_router = NestedDefaultRouter(router, r"companies", lookup="company")
+company_router.register(r"products", ProductViewSet)
 
 urlpatterns = [
     path("api/", include(router.urls)),
+    path("api/", include(company_router.urls)),
     path("api/register/", RegisterView.as_view({"post": "create"}), name="register"),
     path("api/user_profile/", UserProfileView.as_view(), name="user_profile"),
     path("api/change_password/", ChangePasswordView.as_view(), name="change_password"),
