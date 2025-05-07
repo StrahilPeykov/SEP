@@ -23,6 +23,7 @@ from core.views import *
 
 router = DefaultRouter()
 router.register(r"companies", CompanyViewSet)
+router.register(r"users", UserViewSet)
 
 urlpatterns = [
     path("api/", include(router.urls)),
