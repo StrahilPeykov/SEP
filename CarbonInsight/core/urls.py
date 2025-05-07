@@ -29,6 +29,7 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("api/register/", RegisterView.as_view({"post": "create"}), name="register"),
     path("api/user_profile/", UserProfileView.as_view(), name="user_profile"),
+    path("api/change_password/", ChangePasswordView.as_view(), name="change_password"),
     path("api/login/", LoginView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", RefreshView.as_view(), name="token_refresh"),
     path("api/populate_db/", populate_db, name="populate_db"),

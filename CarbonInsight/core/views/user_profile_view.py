@@ -1,14 +1,9 @@
 from django.contrib.auth import get_user_model
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import viewsets, permissions, generics
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
+from rest_framework import generics
 
-from core import serializers
-from core.models import Company, CompanyMembership
-from core.permissions import IsCompanyMemberOrReadOnly, IsCompanyMember
-from core.serializers import CompanySerializer
-from core.serializers.user_serializer import UserUsernameSerializer, UserSerializer
+from core.models import CompanyMembership
+from core.serializers.user_serializer import UserSerializer
 
 User = get_user_model()
 
