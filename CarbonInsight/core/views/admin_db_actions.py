@@ -17,6 +17,7 @@ from core.models.lifecycle_stage import LifecycleStage
 User = get_user_model()
 
 @extend_schema(
+    tags=["TESTING"],
     summary="Populate the database with test data",
     description="FOR TESTING PURPOSES ONLY. "
                 "Creates four test users, four test companies, and products for them. "
@@ -187,6 +188,7 @@ def populate_db(request):
     return redirect(reverse("admin:index"))
 
 @extend_schema(
+    tags=["TESTING"],
     summary="Delete entire database",
     description="FOR TESTING PURPOSES ONLY. "
                 "Deletes all data from the database. "

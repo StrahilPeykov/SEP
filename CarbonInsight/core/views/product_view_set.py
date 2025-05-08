@@ -29,6 +29,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer.save(supplier=company)
 
     @extend_schema(
+        tags=["Products"],
         summary="Create a new product",
         description=(
             "Create a new product with the given details with `company_pk` as the supplier."
@@ -38,6 +39,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return super().create(*args, **kwargs)
 
     @extend_schema(
+        tags=["Products"],
         summary="Retrieve all products",
         description=(
             "Retrieve the details of all products with `company_pk` as the supplier."
@@ -47,6 +49,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return super().list(*args, **kwargs)
 
     @extend_schema(
+        tags=["Products"],
         summary="Retrieve a specific product",
         description=(
             "Retrieve the details of a specific product by its ID."
@@ -56,6 +59,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return super().retrieve(*args, **kwargs)
 
     @extend_schema(
+        tags=["Products"],
         summary="Partially update a specific product's details",
         description=(
             "Update the details of a specific product by its ID. "
@@ -66,6 +70,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return super().partial_update(*args, **kwargs)
 
     @extend_schema(
+        tags=["Products"],
         summary="Update a specific product's details",
         description=(
             "Update the details of a specific product by its ID. "
@@ -76,6 +81,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return super().update(*args, **kwargs)
 
     @extend_schema(
+        tags=["Products"],
         summary="Delete a specific product",
         description=(
             "Delete a specific product by its ID."

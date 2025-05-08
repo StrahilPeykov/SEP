@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
@@ -14,6 +15,11 @@ User = get_user_model()
 class RefreshView(TokenRefreshView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="Refresh access token",
+        description="Use this endpoint to refresh your access token using a valid refresh token.",
+        tags=["Authentication"],
+    )
     def post(self, request, *args, **kwargs):
         serializer = TokenRefreshSerializer(data=request.data)
 

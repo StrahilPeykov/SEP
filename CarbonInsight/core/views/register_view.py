@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -13,6 +14,11 @@ class RegisterView(viewsets.GenericViewSet):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="Register a new user",
+        description="Creates a new user and returns the user data along with access and refresh tokens.",
+        tags=["Authentication"],
+    )
     @action(detail=False, methods=["post"])
     def create(self, request):
         ser = self.get_serializer(data=request.data)

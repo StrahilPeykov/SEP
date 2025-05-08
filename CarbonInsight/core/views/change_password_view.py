@@ -9,6 +9,7 @@ class ChangePasswordView(APIView):
     serializer_class = UserPasswordSerializer
 
     @extend_schema(
+        tags=["User profile"],
         summary="Change the current user's password",
         description="Changes the password of the current user. "
                     "The old password must be provided for verification, "

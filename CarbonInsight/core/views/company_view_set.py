@@ -26,6 +26,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     @extend_schema(
+        tags=["Companies"],
         summary="Create a new company",
         description="Create a new company with the given name, VAT number and business registration number. "
                     "Also adds the current user as a member."
@@ -34,6 +35,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().create(*args, **kwargs)
 
     @extend_schema(
+        tags=["Companies"],
         summary="Retrieve all companies",
         description="Retrieve the details of all companies in the system."
     )
@@ -41,6 +43,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().list(*args, **kwargs)
 
     @extend_schema(
+        tags=["Companies"],
         summary="Retrieve a specific company",
         description="Retrieve the details of a specific company by its ID. "
     )
@@ -48,6 +51,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().retrieve(*args, **kwargs)
 
     @extend_schema(
+        tags=["Companies"],
         summary="Partially update a specific company's details",
         description="Update the details of a specific company by its ID. "
                     "Only the fields that are provided in the request body will be updated. "
@@ -57,6 +61,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().partial_update(*args, **kwargs)
 
     @extend_schema(
+        tags=["Companies"],
         summary="Update a specific company's details",
         description="Update the details of a specific company by its ID. "
                     "All fields will be updated with the provided values. "
@@ -66,6 +71,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().update(*args, **kwargs)
 
     @extend_schema(
+        tags=["Companies"],
         summary="Delete a specific company",
         description="Delete a specific company by its ID. "
                     "Action is available only to company members."
@@ -74,6 +80,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().destroy(*args, **kwargs)
 
     @extend_schema(
+        tags=["Companies"],
         summary="Add a user to a company"
     )
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsCompanyMember])
@@ -87,6 +94,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return Response({"status": "User added"}, status=201)
 
     @extend_schema(
+        tags=["Companies"],
         summary="List all users in a company",
     )
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, IsCompanyMember])
@@ -97,6 +105,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(
+        tags=["Companies"],
         summary="Remove a user from a company"
     )
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsCompanyMember])

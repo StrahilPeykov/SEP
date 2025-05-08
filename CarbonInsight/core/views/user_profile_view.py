@@ -20,24 +20,28 @@ class UserProfileView(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()
 
     @extend_schema(
+        tags=["User profile"],
         summary="Retrieve the current user's profile"
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
     @extend_schema(
+        tags=["User profile"],
         summary="Partially update the current user's profile"
     )
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
 
     @extend_schema(
+        tags=["User profile"],
         summary="Update the current user's profile"
     )
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
 
     @extend_schema(
+        tags=["User profile"],
         summary="Delete the current user",
         description="Deletes the current user, removing them from all companies they are a member of.",
     )
