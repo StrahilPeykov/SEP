@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -17,6 +19,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated, CanEditCompany]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['name', 'vat_number', 'business_registration_number']
+    search_fields = ['name', 'vat_number', 'business_registration_number']
 
     def get_serializer_class(self):
         if self.action in ["add_user", "remove_user"]:
@@ -24,6 +29,14 @@ class CompanyViewSet(viewsets.ModelViewSet):
         if self.action in ["list_users"]:
             return UserSerializer
         return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        company = serializer.save()
+        user = self.request.user
+        membership, created = CompanyMembership.objects.get_or_create(user=user, company=company)
+        if created:
+            membership.save()
+        return company
 
     @extend_schema(
         tags=["Companies"],
@@ -121,3 +134,17 @@ class CompanyViewSet(viewsets.ModelViewSet):
         except CompanyMembership.DoesNotExist:
             return Response({"detail": "Membership not found"}, status=404)
         return Response({"status": "User removed"})
+
+    @extend_schema(
+        tags=["Companies"],
+        summary="List companies the current user belongs to"
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        permission_classes=[IsAuthenticated]
+    )
+    def my(self, request):
+        queryset = request.user.companies.all()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

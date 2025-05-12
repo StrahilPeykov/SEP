@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q
 
 from .emission import Emission
 from .lifecycle_stage import LifecycleStage
@@ -27,11 +28,26 @@ class ProductionEnergyEmission(Emission):
         return f"{self.energy_consumption}kWh (Production energy) for {self.content_object}"
 
 class ProductionEnergyEmissionReference(models.Model):
-    name = models.CharField(max_length=255)
+    common_name = models.CharField(max_length=255, null=True, blank=True)
+    technical_name = models.CharField(max_length=255, null=True, blank=True)
+
+    @property
+    def name(self) -> str:
+        if self.common_name is not None:
+            return self.common_name
+        if self.technical_name is not None:
+            return self.technical_name
+        return "MISSING BOTH COMMON AND TECHNICAL NAME"
 
     class Meta:
         verbose_name = "Production energy emission reference"
         verbose_name_plural = "Production energy emission references"
+        constraints = [
+            models.CheckConstraint(
+                check=Q(common_name__isnull=False) | Q(technical_name__isnull=False),
+                name='common_or_technical_name_not_null_production_energy_reference'
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -47,9 +63,7 @@ class ProductionEnergyEmissionReferenceFactor(models.Model):
         choices=LifecycleStage.choices,
         default=LifecycleStage.OTHER,
     )
-    co_2_emission_factor = models.FloatField(
-        validators=[MinValueValidator(0.0)],
-    )
+    co_2_emission_factor = models.FloatField()
 
     class Meta:
         verbose_name = "Production energy emission reference factor"

@@ -24,9 +24,19 @@ from core.views.product_view_set import ProductViewSet
 
 router = DefaultRouter()
 router.register(r"companies", CompanyViewSet)
+router.register(r"reference/transport", TransportEmissionReferenceViewSet, basename="transport-reference")
+router.register(r"reference/user_energy", UserEnergyEmissionReferenceViewSet, basename="user-energy-reference")
+router.register(r"reference/production_energy", ProductionEnergyEmissionReferenceViewSet, basename="production-energy-reference")
+router.register(r"reference/material", MaterialEmissionReferenceViewSet, basename="material-reference")
+router.register(r"reference/end_of_life", EndOfLifeEmissionReferenceViewSet, basename="end-of-life-reference")
 
 company_router = NestedDefaultRouter(router, r"companies", lookup="company")
 company_router.register(r"products", ProductViewSet)
+company_router.register(
+    r"product_sharing_requests",
+    ProductSharingRequestViewSet,
+    basename="product_sharing_requests"
+)
 
 urlpatterns = [
     path("api/", include(router.urls)),

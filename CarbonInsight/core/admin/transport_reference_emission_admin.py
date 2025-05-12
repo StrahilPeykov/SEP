@@ -13,5 +13,4 @@ class TransportEmissionReferenceFactorInline(admin.TabularInline):
 class TransportReferenceEmissionAdmin(VersionAdmin):
     list_display = ("name", )
     search_fields = ("name",)
-    ordering = ("name",)
     inlines = [TransportEmissionReferenceFactorInline]

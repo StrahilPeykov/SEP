@@ -24,6 +24,10 @@ class ProductSharingRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
+    def is_approved(self):
+        return self.status == ProductSharingRequestStatus.ACCEPTED
+
+    @property
     def provider(self):
         return self.product.supplier
 
@@ -31,6 +35,7 @@ class ProductSharingRequest(models.Model):
         verbose_name = "Product sharing request"
         verbose_name_plural = "Product sharing requests"
         ordering = ["-created_at"]
+        unique_together = ("product", "requester")
 
     def __str__(self):
         return f"{self.product} requested by {self.requester} is {self.status}"

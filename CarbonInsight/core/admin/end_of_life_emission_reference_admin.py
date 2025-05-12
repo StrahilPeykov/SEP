@@ -13,5 +13,4 @@ class EndOfLifeEmissionReferenceFactorInline(admin.TabularInline):
 class EndOfLifeReferenceEmissionAdmin(VersionAdmin):
     list_display = ("name", "landfill_percentage", "incineration_percentage", "recycled_percentage", "reused_percentage")
     search_fields = ("name",)
-    ordering = ("name",)
     inlines = [EndOfLifeEmissionReferenceFactorInline]

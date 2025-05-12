@@ -99,3 +99,90 @@ class UserProfileAPITests(APITestCase):
                 company=self.company
             ).exists()
         )
+
+    def test_update_personal_user_details_put_authenticated_authorized(self):
+        self.assertFalse(
+            User.objects.filter(
+                username="1@company.com",
+                first_name="John",
+                last_name="Pork"
+            ).exists())
+
+        url = reverse("user_profile")
+
+        response = self.client.put(url, {"username": "1@company.com", "email": "1@company.com",
+                                         "first_name": "John", "last_name": "Pork"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(
+            User.objects.filter(
+                username="1@company.com",
+                first_name="John",
+                last_name="Pork"
+            ).exists())
+
+    def test_update_personal_user_details_put_missing_username_authenticated_authorized(self):
+        url = reverse("user_profile")
+
+        response = self.client.put(url, {"email": "test@testmissing.com",
+                                         "first_name": "James", "last_name": "Lasagne"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_personal_user_details_patch_authenticated_authorized(self):
+        url = reverse("user_profile")
+
+        response = self.client.patch(url, {"username": "1@company.com", "email": "1@company.com",
+                                         "first_name": "John2", "last_name": "Pork2"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(
+            User.objects.filter(
+                username="1@company.com",
+                first_name="John2",
+                last_name="Pork2"
+            ).exists())
+
+    def test_update_personal_user_details_unauthorized(self):
+        self.client.credentials()
+        url = reverse("user_profile")
+
+        response = self.client.put(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_personal_user_details_put_authenticated_unauthorized(self):
+        url = reverse("user_profile")
+
+        response = self.client.put(url, {"username": "2@company.com",
+                                         "first_name": "John", "last_name": "Pork"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_personal_user_details_patch_authenticated_unauthorized(self):
+        url = reverse("user_profile")
+
+        response = self.client.patch(url, {"username": "2@company.com",
+                                         "first_name": "John", "last_name": "Pork"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_personal_user_details_check_with_get_put_authenticated_unauthorized(self):
+        url = reverse("user_profile")
+
+        response = self.client.put(url, {"username": "1@company.com", "email": "1@company.com",
+                                         "first_name": "John", "last_name": "Pork"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        get_response = self.client.get(url)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_response.data["username"], "1@company.com")
+        self.assertEqual(get_response.data["first_name"], "John")
+        self.assertEqual(get_response.data["last_name"], "Pork")
+
+    def test_update_personal_user_details_check_with_get_patch_authenticated_unauthorized(self):
+        url = reverse("user_profile")
+
+        response = self.client.patch(url, {"username": "1@company.com", "email": "1@company.com",
+                                         "first_name": "John", "last_name": "Pork"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        get_response = self.client.get(url)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_response.data["username"], "1@company.com")
+        self.assertEqual(get_response.data["first_name"], "John")
+        self.assertEqual(get_response.data["last_name"], "Pork")

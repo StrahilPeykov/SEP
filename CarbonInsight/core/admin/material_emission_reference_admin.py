@@ -13,5 +13,4 @@ class MaterialEmissionReferenceFactorInline(admin.TabularInline):
 class MaterialReferenceEmissionAdmin(VersionAdmin):
     list_display = ("name", )
     search_fields = ("name",)
-    ordering = ("name",)
     inlines = [MaterialEmissionReferenceFactorInline]

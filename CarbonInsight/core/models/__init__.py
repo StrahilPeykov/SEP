@@ -7,7 +7,7 @@ from .end_of_life_emission import EndOfLifeEmission, EndOfLifeEmissionReference,
 from .material_emission import MaterialEmission, MaterialEmissionReference, MaterialEmissionReferenceFactor
 from .product import Product
 from .product_bom_line_item import ProductBoMLineItem
-from .product_sharing_request import ProductSharingRequest
+from .product_sharing_request import ProductSharingRequest, ProductSharingRequestStatus
 from .production_energy_emission import ProductionEnergyEmission, ProductionEnergyEmissionReference, ProductionEnergyEmissionReferenceFactor
 from .transport_emission import TransportEmission, TransportEmissionReference, TransportEmissionReferenceFactor
 from .user import User

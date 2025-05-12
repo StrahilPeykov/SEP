@@ -13,5 +13,4 @@ class UserEnergyEmissionReferenceFactorInline(admin.TabularInline):
 class UserEnergyReferenceEmissionAdmin(VersionAdmin):
     list_display = ("name", )
     search_fields = ("name",)
-    ordering = ("name",)
     inlines = [UserEnergyEmissionReferenceFactorInline]
