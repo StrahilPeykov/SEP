@@ -10,6 +10,8 @@ class User(AbstractUser):
     """
     # Make email unique
     email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
 
     class Meta:
         verbose_name = "User"
