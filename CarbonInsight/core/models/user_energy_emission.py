@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q
 
 from .emission import Emission
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
 from .lifecycle_stage import LifecycleStage
 
 
@@ -16,16 +17,22 @@ class UserEnergyEmission(Emission):
         related_name="user_emissions",
     )
 
-    def calculate_emissions(self) -> dict[LifecycleStage, float]:
-        return {LifecycleStage.OTHER: 0}
-    calculate_emissions.short_description = "Emissions"
+    def _get_emission_trace(self) -> EmissionTrace:
+        reference_emission_trace = self.reference.get_emission_trace()
+
+        # Multiply by the factor
+        reference_multiplied_factor = reference_emission_trace * self.energy_consumption
+        reference_multiplied_factor.label = f"User energy consumption emission"
+        reference_multiplied_factor.methodology = f"{self.energy_consumption}kWh * {self.reference.name}"
+
+        return reference_multiplied_factor
 
     class Meta:
         verbose_name = "User energy emission"
         verbose_name_plural = "User energy emissions"
 
     def __str__(self):
-        return f"{self.energy_consumption}kWh (User energy) for {self.content_object}"
+        return f"{self.energy_consumption}kWh (User energy) for {self.parent_product.name}"
 
 class UserEnergyEmissionReference(models.Model):
     common_name  = models.CharField(max_length=255, null=True, blank=True)
@@ -48,6 +55,21 @@ class UserEnergyEmissionReference(models.Model):
                 name='common_or_technical_name_not_null_user_energy_reference'
             ),
         ]
+
+    def get_emission_trace(self) -> EmissionTrace:
+        root = EmissionTrace(
+            label=f"Reference values for {self.name}",
+            methodology=f"Database lookup",
+        )
+        # Go through all factors and add them to the root
+        for factor in self.reference_factors.all():
+            root.emissions_subtotal[factor.lifecycle_stage] = factor.co_2_emission_factor
+        root.mentions.append(EmissionTraceMention(
+            mention_class=EmissionTraceMentionClass.INFORMATION,
+            message="Estimated values"
+        ))
+        return root
+    get_emission_trace.short_description = "Emissions trace"
 
     def __str__(self):
         return self.name

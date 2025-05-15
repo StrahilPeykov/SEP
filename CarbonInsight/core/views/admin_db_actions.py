@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from core.models import Company, CompanyMembership, MaterialEmission, MaterialEmissionReference, Product, \
     ProductBoMLineItem, TransportEmission, TransportEmissionReference, Emission, MaterialEmissionReferenceFactor, \
-    TransportEmissionReferenceFactor
+    TransportEmissionReferenceFactor, EmissionBoMLink
 from core.models.lifecycle_stage import LifecycleStage
 
 User = get_user_model()
@@ -79,13 +79,13 @@ def populate_db(request):
     CompanyMembership.objects.create(user=tsmc_user_2, company=tsmc)
 
     # Add raw materials
-    glass_material = MaterialEmissionReference.objects.create(name="Glass")
+    glass_material = MaterialEmissionReference.objects.create(common_name="Glass")
     MaterialEmissionReferenceFactor.objects.create(
         emission_reference=glass_material,
         lifecycle_stage = LifecycleStage.A1,
         co_2_emission_factor=0.5,
     )
-    silicon_material = MaterialEmissionReference.objects.create(name="Silicon")
+    silicon_material = MaterialEmissionReference.objects.create(common_name="Silicon")
     MaterialEmissionReferenceFactor.objects.create(
         emission_reference=silicon_material,
         lifecycle_stage = LifecycleStage.A2,
@@ -99,8 +99,7 @@ def populate_db(request):
         supplier=tsmc,
     )
     processor_material_emission  = MaterialEmission.objects.create(
-        content_type=ContentType.objects.get_for_model(processor),
-        content_object=processor,
+        parent_product=processor,
         weight=0.5,
         reference=silicon_material,
     )
@@ -110,8 +109,7 @@ def populate_db(request):
         supplier=samsung,
     )
     camera_material_emission = MaterialEmission.objects.create(
-        content_type=ContentType.objects.get_for_model(camera),
-        content_object=camera,
+        parent_product=camera,
         weight=0.2,
         reference=glass_material,
     )
@@ -121,8 +119,7 @@ def populate_db(request):
         supplier=samsung,
     )
     display_self_estimated_pollution = MaterialEmission.objects.create(
-        content_type=ContentType.objects.get_for_model(display),
-        content_object=display,
+        parent_product=display,
         weight=0.3,
         reference=glass_material,
     )
@@ -137,24 +134,27 @@ def populate_db(request):
         quantity=1
     )
 
-    transport_air = TransportEmissionReference.objects.create(name="Air transport")
+    transport_air = TransportEmissionReference.objects.create(common_name="Air transport")
     TransportEmissionReferenceFactor.objects.create(
         emission_reference=transport_air,
         lifecycle_stage=LifecycleStage.A3,
         co_2_emission_factor=0.2,
     )
-    transport_road = TransportEmissionReference.objects.create(name="Road transport")
+    transport_road = TransportEmissionReference.objects.create(common_name="Road transport")
     TransportEmissionReferenceFactor.objects.create(
         emission_reference=transport_road,
         lifecycle_stage=LifecycleStage.A3,
         co_2_emission_factor=0.05,
     )
     iphone_line_processor_transport = TransportEmission.objects.create(
-        content_type=ContentType.objects.get_for_model(iphone_line_processor),
-        content_object=iphone_line_processor,
+        parent_product=iphone,
         distance=2000,
         weight=0.5,
         reference=transport_air,
+    )
+    EmissionBoMLink.objects.create(
+        emission=iphone_line_processor_transport,
+        line_item=iphone_line_processor,
     )
     iphone_line_camera = ProductBoMLineItem.objects.create(
         parent_product=iphone,
@@ -162,11 +162,14 @@ def populate_db(request):
         quantity=3
     )
     iphone_line_camera_transport = TransportEmission.objects.create(
-        content_type=ContentType.objects.get_for_model(iphone_line_camera),
-        content_object=iphone_line_camera,
+        parent_product=iphone,
         distance=500,
         weight=0.2,
         reference=transport_road,
+    )
+    EmissionBoMLink.objects.create(
+        emission=iphone_line_camera_transport,
+        line_item=iphone_line_camera,
     )
     iphone_line_display = ProductBoMLineItem.objects.create(
         parent_product=iphone,
@@ -174,11 +177,14 @@ def populate_db(request):
         quantity=1
     )
     iphone_line_display_transport = TransportEmission.objects.create(
-        content_type=ContentType.objects.get_for_model(iphone_line_display),
-        content_object=iphone_line_display,
+        parent_product=iphone,
         distance=800,
         weight=0.3,
         reference=transport_road,
+    )
+    EmissionBoMLink.objects.create(
+        emission=iphone_line_display_transport,
+        line_item=iphone_line_display,
     )
 
     # Log in as the admin user

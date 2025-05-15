@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q
 
 from .emission import Emission
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
 from .lifecycle_stage import LifecycleStage
 
 
@@ -23,16 +24,26 @@ class TransportEmission(Emission):
     def tkg(self):
         return self.weight * self.distance
 
-    def calculate_emissions(self) -> dict[LifecycleStage, float]:
-        return {LifecycleStage.OTHER: 0}
-    calculate_emissions.short_description = "Emissions"
+    def _get_emission_trace(self) -> EmissionTrace:
+        reference_emission_trace = self.reference.get_emission_trace()
+
+        # Multiply by the factor
+        reference_multiplied_factor = reference_emission_trace * self.tkg
+        reference_multiplied_factor.label = f"Transport emission"
+        reference_multiplied_factor.methodology = f"{self.weight}kg * {self.distance}km * {self.reference.name}"
+
+        return reference_multiplied_factor
 
     class Meta:
         verbose_name = "Transport emission"
         verbose_name_plural = "Transport emissions"
 
     def __str__(self):
-        return f"{self.tkg}tkg (Transport) for {self.content_object}"
+        out = f"{self.tkg}tkm (Transport) for {self.parent_product.name}/"
+        if self.line_items.exists():
+            for line_item in self.line_items.all():
+                 out += f"{line_item.line_item_product.name}, "
+        return out.strip("/").strip(", ")
 
 class TransportEmissionReference(models.Model):
     common_name = models.CharField(max_length=255, null=True, blank=True)
@@ -44,6 +55,8 @@ class TransportEmissionReference(models.Model):
             return self.common_name
         if self.technical_name is not None:
             return self.technical_name
+        # This return exists to prevent Django from crashing
+        # when the changes exist solely in memory.
         return "MISSING BOTH COMMON AND TECHNICAL NAME"
 
     class Meta:
@@ -55,6 +68,21 @@ class TransportEmissionReference(models.Model):
                 name='common_or_technical_name_not_null_transport_emission_reference'
             ),
         ]
+
+    def get_emission_trace(self) -> EmissionTrace:
+        root = EmissionTrace(
+            label=f"Reference values for {self.name}",
+            methodology=f"Database lookup",
+        )
+        # Go through all factors and add them to the root
+        for factor in self.reference_factors.all():
+            root.emissions_subtotal[factor.lifecycle_stage] = factor.co_2_emission_factor
+        root.mentions.append(EmissionTraceMention(
+            mention_class=EmissionTraceMentionClass.INFORMATION,
+            message="Estimated values"
+        ))
+        return root
+    get_emission_trace.short_description = "Emissions trace"
 
     def __str__(self):
         return self.name

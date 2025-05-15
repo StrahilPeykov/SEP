@@ -2,6 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -23,7 +24,7 @@ class ProductSharingRequestViewSet(mixins.ListModelMixin, viewsets.GenericViewSe
         return super().get_serializer_class()
 
     def get_parent_company(self):
-        return Company.objects.get(pk=self.kwargs['company_pk'])
+        return get_object_or_404(Company, pk=self.kwargs['company_pk'])
 
     def get_queryset(self):
         company = self.get_parent_company()

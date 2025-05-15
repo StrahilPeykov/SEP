@@ -11,6 +11,10 @@ class UserEnergyEmissionReferenceFactorInline(admin.TabularInline):
 
 @admin.register(UserEnergyEmissionReference)
 class UserEnergyReferenceEmissionAdmin(VersionAdmin):
-    list_display = ("name", )
+    list_display = ("name", "get_emission_total", "get_emission_trace")
     search_fields = ("name",)
     inlines = [UserEnergyEmissionReferenceFactorInline]
+
+    def get_emission_total(self, reference:UserEnergyEmissionReference) -> float:
+        return reference.get_emission_trace().total
+    get_emission_total.short_description = "Total emissions"

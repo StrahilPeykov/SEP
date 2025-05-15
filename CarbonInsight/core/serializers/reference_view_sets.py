@@ -1,9 +1,8 @@
 from rest_framework import serializers
 
-from core.models import UserEnergyEmissionReference, ProductionEnergyEmissionReference, MaterialEmissionReference, \
-    EndOfLifeEmissionReference
+from core.models import (UserEnergyEmissionReference, ProductionEnergyEmissionReference,
+                         MaterialEmissionReference, TransportEmissionReference)
 from core.models.lifecycle_stage import LifecycleStage
-from core.models.transport_emission import TransportEmissionReference
 
 class TransportEmissionReferenceSerializer(serializers.ModelSerializer):
     emission_factors = serializers.SerializerMethodField()
@@ -52,20 +51,6 @@ class MaterialEmissionReferenceSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "emission_factors")
 
     def get_emission_factors(self, obj: MaterialEmissionReference) -> dict[LifecycleStage, float]:
-        return {
-            factor.lifecycle_stage: factor.co_2_emission_factor
-            for factor in obj.reference_factors.all()
-        }
-
-class EndOfLifeEmissionReferenceSerializer(serializers.ModelSerializer):
-    emission_factors = serializers.SerializerMethodField()
-
-    class Meta:
-        model = EndOfLifeEmissionReference
-        fields = ("id", "name", "emission_factors", "landfill_percentage",
-                  "incineration_percentage", "recycled_percentage", "reused_percentage")
-
-    def get_emission_factors(self, obj: EndOfLifeEmissionReference) -> dict[LifecycleStage, float]:
         return {
             factor.lifecycle_stage: factor.co_2_emission_factor
             for factor in obj.reference_factors.all()

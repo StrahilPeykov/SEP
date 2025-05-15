@@ -2,28 +2,40 @@ from django.contrib import admin
 from polymorphic.admin import PolymorphicChildModelFilter, PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
 from reversion.admin import VersionAdmin
 
-from core.models import Emission, EndOfLifeEmission, MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission
+from core.models import Emission, MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission, \
+    EmissionBoMLink
+
+
+class EmissionBoMLinkAdminInline(admin.TabularInline):
+    model = EmissionBoMLink
+    fields = ("line_item",)
+    extra = 0
+    verbose_name = "BoM line item link"
+    verbose_name_plural = "BoM line item links"
 
 @admin.register(Emission)
 class EmissionAdmin(VersionAdmin, PolymorphicParentModelAdmin):
     base_model = Emission  # Optional, explicitly set here.
-    child_models = (EndOfLifeEmission, MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission)
-    list_display = ("content_object", "calculate_emissions")
+    child_models = (MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission)
+    list_display = ("parent_product", "get_emission_total", "get_emission_trace")
     list_filter = (PolymorphicChildModelFilter,)  # This is optional.
+    inlines = [EmissionBoMLinkAdminInline]
+
+    def get_emission_total(self, emission:Emission) -> float:
+        return emission.get_emission_trace().total
+    get_emission_total.short_description = "Total emissions"
 
 
 class EmissionChildAdmin(PolymorphicChildModelAdmin):
     base_model = Emission  # Optional, explicitly set here.
+    inlines = [EmissionBoMLinkAdminInline]
 
     # By using these `base_...` attributes instead of the regular ModelAdmin `form` and `fieldsets`,
     # the additional fields of the child models are automatically added to the admin form.
 
-@admin.register(EndOfLifeEmission)
-class EndOfLifeEmissionAdmin(VersionAdmin, EmissionChildAdmin):
-    base_model = EndOfLifeEmission
-    list_display = EmissionAdmin.list_display + ("weight", "reference")
-    list_filter = ("reference",)
-    show_in_index = True
+    def get_emission_total(self, emission:Emission) -> float:
+        return emission.get_emission_trace().total
+    get_emission_total.short_description = "Total emissions"
 
 @admin.register(MaterialEmission)
 class MaterialEmissionAdmin(VersionAdmin, EmissionChildAdmin):

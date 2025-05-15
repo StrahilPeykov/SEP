@@ -1,14 +1,11 @@
 import sys
 
-from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from core.models import *
 from .company_admin import CompanyAdmin
-from .company_membership_admin import CompanyMembershipAdmin
 from .product_admin import ProductAdmin
 from .emission_admin import *
-from .end_of_life_emission_reference_admin import *
 from .material_emission_reference_admin import *
 from .production_energy_reference_emission_admin import *
 from .transport_reference_emission_admin import *

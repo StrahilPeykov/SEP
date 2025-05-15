@@ -4,10 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 
 from core.models.transport_emission import TransportEmissionReference
 from core.serializers.reference_view_sets import MaterialEmissionReferenceSerializer, \
-    ProductionEnergyEmissionReferenceSerializer, EndOfLifeEmissionReferenceSerializer, \
+    ProductionEnergyEmissionReferenceSerializer, \
     UserEnergyEmissionReferenceSerializer, TransportEmissionReferenceSerializer
-from core.models import UserEnergyEmissionReference, ProductionEnergyEmissionReference, MaterialEmissionReference, \
-    EndOfLifeEmissionReference
+from core.models import UserEnergyEmissionReference, ProductionEnergyEmissionReference, MaterialEmissionReference
 
 
 class TransportEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
@@ -82,25 +81,6 @@ class MaterialEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(
         tags=["Reference"],
         summary="Retrieve a specific material emission reference",
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-
-class EndOfLifeEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = EndOfLifeEmissionReference.objects.all()
-    serializer_class = EndOfLifeEmissionReferenceSerializer
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        tags=["Reference"],
-        summary="Retrieve all end of life emission references",
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
-        tags=["Reference"],
-        summary="Retrieve a specific end of life emission reference",
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)

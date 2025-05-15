@@ -49,7 +49,7 @@ class CompanyUserManagementAPITests(APITestCase):
 
     def test_add_user_to_company_unauthenticated(self):
         self.client.credentials()
-        url = reverse("company-add-user", args=[self.red_company.id])
+        url = reverse("company-users-list", args=[self.red_company.id])
         data = {
             "username": "1@greencompany.com"
         }
@@ -57,7 +57,7 @@ class CompanyUserManagementAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_add_user_to_company_authenticated_authorized(self):
-        url = reverse("company-add-user", args=[self.red_company.id])
+        url = reverse("company-users-list", args=[self.red_company.id])
         data = {
             "username": "1@greencompany.com"
         }
@@ -71,7 +71,7 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_add_user_to_company_authenticated_unauthorized(self):
-        url = reverse("company-add-user", args=[self.green_company.id])
+        url = reverse("company-users-list", args=[self.green_company.id])
         data = {
             "username": "1@redcompany.com"
         }
@@ -86,11 +86,8 @@ class CompanyUserManagementAPITests(APITestCase):
 
     def test_remove_user_from_company_unauthenticated(self):
         self.client.credentials()
-        url = reverse("company-remove-user", args=[self.red_company.id])
-        data = {
-            "username": "1@redcompany.com"
-        }
-        response = self.client.post(url, data, format="json")
+        url = reverse("company-users-detail", args=[self.red_company.id, self.red_company_user1.id])
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertTrue(
             CompanyMembership.objects.filter(
@@ -100,12 +97,9 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_remove_user_from_company_authenticated_authorized(self):
-        url = reverse("company-remove-user", args=[self.red_company.id])
-        data = {
-            "username": "2@redcompany.com"
-        }
-        response = self.client.post(url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        url = reverse("company-users-detail", args=[self.red_company.id, self.red_company_user2.id])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(
             CompanyMembership.objects.filter(
                 user=self.red_company_user2,
@@ -114,11 +108,8 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_remove_user_from_company_authenticated_unauthorized(self):
-        url = reverse("company-remove-user", args=[self.green_company.id])
-        data = {
-            "username": "1@greencompany.com"
-        }
-        response = self.client.post(url, data, format="json")
+        url = reverse("company-users-detail", args=[self.green_company.id, self.green_company_user1.id])
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(
             CompanyMembership.objects.filter(
@@ -129,17 +120,17 @@ class CompanyUserManagementAPITests(APITestCase):
 
     def test_get_users_in_company_unauthenticated(self):
         self.client.credentials()
-        url = reverse("company-list-users", args=[self.red_company.id])
+        url = reverse("company-users-list", args=[self.red_company.id])
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_users_in_company_authenticated_authorized(self):
-        url = reverse("company-list-users", args=[self.red_company.id])
+        url = reverse("company-users-list", args=[self.red_company.id])
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
 
     def test_get_users_in_company_authenticated_unauthorized(self):
-        url = reverse("company-list-users", args=[self.green_company.id])
+        url = reverse("company-users-list", args=[self.green_company.id])
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

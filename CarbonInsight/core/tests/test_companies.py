@@ -225,3 +225,21 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Company.objects.count(), 2)
         self.assertTrue(Company.objects.filter(id=self.green_company.id).exists())
+
+    def test_list_companies_my(self):
+        CompanyMembership.objects.create(user=self.red_company_user1, company=self.green_company)
+
+        self.blue_company = Company.objects.create(
+            name="Blue company BV",
+            vat_number="VATBLUE",
+            business_registration_number="NL9876543"
+        )
+
+        url = reverse("companies-my-list")
+        response = self.client.get(url)
+
+        company_list = [company["name"] for company in response.data]
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("Red company BV", company_list)
+        self.assertIn("Green company BV", company_list)
+        self.assertNotIn("Blue company BV", company_list)

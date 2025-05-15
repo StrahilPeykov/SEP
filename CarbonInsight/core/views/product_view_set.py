@@ -3,11 +3,13 @@ from rest_framework import viewsets, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
 from core.models import Product, Company
 from core.permissions import ProductPermission
+from core.serializers.emission_trace_serializer import EmissionTraceSerializer
 from core.serializers.product_serializer import ProductSerializer
 from core.serializers.product_sharing_request_serializer import ProductSharingRequestRequestAccessSerializer
 
@@ -22,11 +24,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ["request_access"]:
             return ProductSharingRequestRequestAccessSerializer
+        if self.action in ["emission_traces"]:
+            return EmissionTraceSerializer
         return super().get_serializer_class()
 
     def get_parent_company(self):
         # drf-nested-routers stores the company pk in kwargs
-        return Company.objects.get(pk=self.kwargs['company_pk'])
+        return get_object_or_404(Company, pk=self.kwargs['company_pk'])
 
     def get_queryset(self):
         company = self.get_parent_company()
@@ -137,3 +141,17 @@ class ProductViewSet(viewsets.ModelViewSet):
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Get emission traces for a product",
+        description=(
+            "Retrieve the emission traces for a specific product by its ID."
+        )
+    )
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, ProductPermission])
+    def emission_traces(self, request, *args, **kwargs):
+        product = self.get_object()
+        emission_trace = product.get_emission_trace()
+        serializer = self.get_serializer(emission_trace)
+        return Response(serializer.data)

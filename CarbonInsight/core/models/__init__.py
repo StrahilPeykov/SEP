@@ -1,9 +1,9 @@
 import reversion
 
-from .emission import Emission
+from .emission import Emission, EmissionOverrideFactor
+from .emission_bom_link import EmissionBoMLink
 from .company import Company
 from .company_membership import CompanyMembership
-from .end_of_life_emission import EndOfLifeEmission, EndOfLifeEmissionReference, EndOfLifeEmissionReferenceFactor
 from .material_emission import MaterialEmission, MaterialEmissionReference, MaterialEmissionReferenceFactor
 from .product import Product
 from .product_bom_line_item import ProductBoMLineItem
@@ -16,9 +16,6 @@ from .user_energy_emission import UserEnergyEmission, UserEnergyEmissionReferenc
 reversion.register(Emission)
 reversion.register(Company)
 reversion.register(CompanyMembership)
-reversion.register(EndOfLifeEmission)
-reversion.register(EndOfLifeEmissionReference)
-reversion.register(EndOfLifeEmissionReferenceFactor)
 reversion.register(MaterialEmission)
 reversion.register(MaterialEmissionReference)
 reversion.register(MaterialEmissionReferenceFactor)

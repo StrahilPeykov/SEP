@@ -6,5 +6,5 @@ from .admin_db_actions import populate_db, destroy_db
 from .user_profile_view import UserProfileView
 from .change_password_view import ChangePasswordView
 from .reference_view_sets import TransportEmissionReferenceViewSet, UserEnergyEmissionReferenceViewSet, \
-    ProductionEnergyEmissionReferenceViewSet, MaterialEmissionReferenceViewSet, EndOfLifeEmissionReferenceViewSet
+    ProductionEnergyEmissionReferenceViewSet, MaterialEmissionReferenceViewSet
 from .product_sharing_request_view_set import ProductSharingRequestViewSet

@@ -20,27 +20,35 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
 from core.views import *
+from core.views.product_bom_line_item_view_set import ProductBoMLineItemViewSet
+from core.views.company_view_set import MyCompaniesViewSet
+from core.views.company_view_set import CompanyUserViewSet
 from core.views.product_view_set import ProductViewSet
 
 router = DefaultRouter()
+router.register(r"companies/my", MyCompaniesViewSet, basename="companies-my")
 router.register(r"companies", CompanyViewSet)
 router.register(r"reference/transport", TransportEmissionReferenceViewSet, basename="transport-reference")
 router.register(r"reference/user_energy", UserEnergyEmissionReferenceViewSet, basename="user-energy-reference")
 router.register(r"reference/production_energy", ProductionEnergyEmissionReferenceViewSet, basename="production-energy-reference")
 router.register(r"reference/material", MaterialEmissionReferenceViewSet, basename="material-reference")
-router.register(r"reference/end_of_life", EndOfLifeEmissionReferenceViewSet, basename="end-of-life-reference")
 
 company_router = NestedDefaultRouter(router, r"companies", lookup="company")
 company_router.register(r"products", ProductViewSet)
+company_router.register(r"users", CompanyUserViewSet, basename="company-users")
 company_router.register(
     r"product_sharing_requests",
     ProductSharingRequestViewSet,
     basename="product_sharing_requests"
 )
 
+product_router = NestedDefaultRouter(company_router, r"products", lookup="product")
+product_router.register(r"bom", ProductBoMLineItemViewSet, basename="product-bom")
+
 urlpatterns = [
     path("api/", include(router.urls)),
     path("api/", include(company_router.urls)),
+    path("api/", include(product_router.urls)),
     path("api/register/", RegisterView.as_view({"post": "create"}), name="register"),
     path("api/user_profile/", UserProfileView.as_view(), name="user_profile"),
     path("api/change_password/", ChangePasswordView.as_view(), name="change_password"),

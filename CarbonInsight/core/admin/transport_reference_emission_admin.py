@@ -11,6 +11,10 @@ class TransportEmissionReferenceFactorInline(admin.TabularInline):
 
 @admin.register(TransportEmissionReference)
 class TransportReferenceEmissionAdmin(VersionAdmin):
-    list_display = ("name", )
+    list_display = ("name", "get_emission_total", "get_emission_trace")
     search_fields = ("name",)
     inlines = [TransportEmissionReferenceFactorInline]
+
+    def get_emission_total(self, reference:TransportEmissionReference) -> float:
+        return reference.get_emission_trace().total
+    get_emission_total.short_description = "Total emissions"
