@@ -28,7 +28,7 @@ class ProductSharingRequest(models.Model):
         return self.status == ProductSharingRequestStatus.ACCEPTED
 
     @property
-    def provider(self):
+    def supplier(self):
         return self.product.supplier
 
     class Meta:
