@@ -3,18 +3,21 @@ from django.db import models
 from django.db.models import Q
 
 from .emission import Emission
-from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionTraceSource
 from .lifecycle_stage import LifecycleStage
+from .reference_impact_unit import ReferenceImpactUnit
 
 
 class UserEnergyEmission(Emission):
     energy_consumption = models.FloatField(
         validators=[MinValueValidator(0.0)],
+        help_text="Energy consumption in kWh",
     )
     reference = models.ForeignKey(
         "UserEnergyEmissionReference",
         on_delete=models.CASCADE,
         related_name="user_emissions",
+        help_text="Reference values for the user energy emission",
     )
 
     def _get_emission_trace(self) -> EmissionTrace:
@@ -60,10 +63,12 @@ class UserEnergyEmissionReference(models.Model):
         root = EmissionTrace(
             label=f"Reference values for {self.name}",
             methodology=f"Database lookup",
+            reference_impact_unit=ReferenceImpactUnit.KILOWATT_HOUR,
+            source=EmissionTraceSource.USER_ENERGY,
         )
         # Go through all factors and add them to the root
         for factor in self.reference_factors.all():
-            root.emissions_subtotal[factor.lifecycle_stage] = factor.co_2_emission_factor
+            root.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = factor.co_2_emission_factor
         root.mentions.append(EmissionTraceMention(
             mention_class=EmissionTraceMentionClass.INFORMATION,
             message="Estimated values"

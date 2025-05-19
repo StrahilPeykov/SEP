@@ -20,10 +20,14 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
 from core.views import *
+from core.views.material_emission_view_set import MaterialEmissionViewSet
 from core.views.product_bom_line_item_view_set import ProductBoMLineItemViewSet
 from core.views.company_view_set import MyCompaniesViewSet
 from core.views.company_view_set import CompanyUserViewSet
 from core.views.product_view_set import ProductViewSet
+from core.views.production_energy_view_set import ProductionEnergyEmissionViewSet
+from core.views.transport_emission_view_set import TransportEmissionViewSet
+from core.views.user_energy_view_set import UserEnergyEmissionViewSet
 
 router = DefaultRouter()
 router.register(r"companies/my", MyCompaniesViewSet, basename="companies-my")
@@ -44,6 +48,10 @@ company_router.register(
 
 product_router = NestedDefaultRouter(company_router, r"products", lookup="product")
 product_router.register(r"bom", ProductBoMLineItemViewSet, basename="product-bom")
+product_router.register(r"emissions/transport", TransportEmissionViewSet, basename="product-transport-emissions")
+product_router.register(r"emissions/user_energy", UserEnergyEmissionViewSet, basename="product-user-energy-emissions")
+product_router.register(r"emissions/production_energy", ProductionEnergyEmissionViewSet, basename="product-production-energy-emissions")
+product_router.register(r"emissions/material", MaterialEmissionViewSet, basename="product-material-emissions")
 
 urlpatterns = [
     path("api/", include(router.urls)),

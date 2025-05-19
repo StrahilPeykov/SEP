@@ -1,24 +1,77 @@
 from rest_framework.generics import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from core.models import Product, ProductBoMLineItem, Company
-from core.permissions import ProductBoMLineItemPermission
+from core.permissions import ProductSubAPIPermission
 from core.serializers.product_bom_line_item_serializer import ProductBoMLineItemSerializer
+from core.views.mixins.company_mixin import CompanyMixin
+from core.views.mixins.product_mixin import ProductMixin
 
 
-class ProductBoMLineItemViewSet(viewsets.ModelViewSet):
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="company_pk",
+            type=int,
+            location="path",
+            description="Primary key of the parent Company",
+        ),
+        OpenApiParameter(
+            name="product_pk",
+            type=int,
+            location="path",
+            description="Primary key of the parent Product",
+        ),
+        OpenApiParameter(
+            name="id",
+            type=int,
+            location="path",
+            description="Primary key of the BoM line item",
+        )
+    ],
+)
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Product BoM line items"],
+        summary="Retrieve all BoM line items for a product",
+        description="Retrieve all BoM line items for a specific product. "
+    ),
+    retrieve=extend_schema(
+        tags=["Product BoM line items"],
+        summary="Retrieve a specific BoM line item for a product",
+        description="Retrieve a specific BoM line item for a product. "
+    ),
+    create=extend_schema(
+        tags=["Product BoM line items"],
+        summary="Create a new BoM line item for a product",
+        description="Create a new BoM line item for a specific product. "
+    ),
+    update=extend_schema(
+        tags=["Product BoM line items"],
+        summary="Update a BoM line item for a product",
+        description="Update a specific BoM line item for a product. "
+    ),
+    partial_update=extend_schema(
+        tags=["Product BoM line items"],
+        summary="Partially update a BoM line item for a product",
+        description="Partially update a specific BoM line item for a product. "
+    ),
+    destroy=extend_schema(
+        tags=["Product BoM line items"],
+        summary="Delete a BoM line item for a product",
+        description="Delete a specific BoM line item for a product. "
+    ),
+)
+class ProductBoMLineItemViewSet(
+    CompanyMixin,
+    ProductMixin,
+    viewsets.ModelViewSet
+):
+    queryset = ProductBoMLineItem.objects.none()  # Set to none to force overriding get_queryset
     serializer_class = ProductBoMLineItemSerializer
-    permission_classes = [IsAuthenticated, ProductBoMLineItemPermission]
-
-    def get_parent_company(self):
-        # drf-nested-routers stores the company pk in kwargs
-        return get_object_or_404(Company, pk=self.kwargs['company_pk'])
-
-    def get_parent_product(self):
-        # drf-nested-routers stores the company pk in kwargs
-        return get_object_or_404(Product, pk=self.kwargs['product_pk'], supplier=self.get_parent_company())
+    permission_classes = [IsAuthenticated, ProductSubAPIPermission]
 
     def get_queryset(self):
         product = self.get_parent_product()
@@ -28,45 +81,3 @@ class ProductBoMLineItemViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         product = self.get_parent_product()
         serializer.save(parent_product=product)
-
-    @extend_schema(
-        tags=["Product BoM line items"],
-        summary="Retrieve all BoM line items for a product",
-    )
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
-
-    @extend_schema(
-        tags=["Product BoM line items"],
-        summary="Retrieve a specific BoM line item for a product",
-    )
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
-
-    @extend_schema(
-        tags=["Product BoM line items"],
-        summary="Create a new BoM line item for a product",
-    )
-    def create(self, *args, **kwargs):
-        return super().create(*args, **kwargs)
-
-    @extend_schema(
-        tags=["Product BoM line items"],
-        summary="Update a BoM line item for a product",
-    )
-    def update(self, *args, **kwargs):
-        return super().update(*args, **kwargs)
-
-    @extend_schema(
-        tags=["Product BoM line items"],
-        summary="Partially update a BoM line item for a product",
-    )
-    def partial_update(self, *args, **kwargs):
-        return super().partial_update(*args, **kwargs)
-
-    @extend_schema(
-        tags=["Product BoM line items"],
-        summary="Delete a BoM line item for a product",
-    )
-    def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)

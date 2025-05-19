@@ -12,6 +12,8 @@ from .production_energy_emission import ProductionEnergyEmission, ProductionEner
 from .transport_emission import TransportEmission, TransportEmissionReference, TransportEmissionReferenceFactor
 from .user import User
 from .user_energy_emission import UserEnergyEmission, UserEnergyEmissionReference, UserEnergyEmissionReferenceFactor
+from .ai_conversation_log import AIConversationLog
+from .lifecycle_stage import LifecycleStage
 
 reversion.register(Emission)
 reversion.register(Company)

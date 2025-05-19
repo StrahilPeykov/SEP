@@ -14,7 +14,7 @@ class CompanyMembershipInline(admin.TabularInline):
 
 class ProductInline(admin.TabularInline):
     model = Product
-    fields = ("name", "manufacturer", "sku",)
+    fields = ("name", "manufacturer_name", "sku",)
     extra = 0
     verbose_name = "Product"
     verbose_name_plural = "Products"

@@ -44,7 +44,13 @@ class ProductAPITest(APITestCase):
             name="Red paint",
             description="Red paint",
             supplier=self.red_company,
-            manufacturer="Red company",
+            manufacturer_name="Red company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="12345678999",
             is_public=True
         )
@@ -53,7 +59,13 @@ class ProductAPITest(APITestCase):
             name="Purple paint",
             description="Purple paint",
             supplier=self.red_company,
-            manufacturer="Red company",
+            manufacturer_name="Red company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="12345678988",
             is_public=True
         )
@@ -62,7 +74,13 @@ class ProductAPITest(APITestCase):
             name="Secret Plan Red",
             description="Secret Plan Red",
             supplier=self.red_company,
-            manufacturer="Red company",
+            manufacturer_name="Red company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="111222333444",
             is_public=False
         )
@@ -71,7 +89,13 @@ class ProductAPITest(APITestCase):
             name="Blue paint",
             description="Blue paint",
             supplier=self.blue_company,
-            manufacturer="Blue company",
+            manufacturer_name="Blue company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="12345678999",
             is_public=True
         )
@@ -80,7 +104,13 @@ class ProductAPITest(APITestCase):
             name="Secret Plan Blue",
             description="Secret Plan Blue",
             supplier=self.blue_company,
-            manufacturer="Blue company",
+            manufacturer_name="Blue company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="111222333444",
             is_public=False
         )

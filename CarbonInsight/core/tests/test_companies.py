@@ -91,7 +91,7 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("vat_number", response.data)
+        self.assertIn("vat_number", response.data["errors"][0]["attr"])
         self.assertFalse(CompanyMembership.objects.filter(user=self.red_company_user1, company__name="New Company").exists())
         
     def test_create_company_with_existing_business_registration_number(self):
@@ -103,7 +103,7 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("business_registration_number", response.data)
+        self.assertIn("business_registration_number", response.data["errors"][0]["attr"])
         self.assertFalse(CompanyMembership.objects.filter(user=self.red_company_user1, company__name="New Company").exists())
         
     def test_put_company_unauthenticated(self):
@@ -148,7 +148,7 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.put(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("vat_number", response.data)
+        self.assertIn("vat_number", response.data["errors"][0]["attr"])
         
     def test_put_company_with_existing_business_registration_number(self):
         url = reverse("company-detail", args=[self.red_company.id])
@@ -159,7 +159,7 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.put(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("business_registration_number", response.data)
+        self.assertIn("business_registration_number", response.data["errors"][0]["attr"])
         
     def test_patch_company_unauthenticated(self):
         self.client.credentials()
@@ -195,7 +195,7 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.patch(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("vat_number", response.data)
+        self.assertIn("vat_number", response.data["errors"][0]["attr"])
 
     def test_patch_company_with_existing_business_registration_number(self):
         url = reverse("company-detail", args=[self.red_company.id])
@@ -204,7 +204,7 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.patch(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("business_registration_number", response.data)
+        self.assertIn("business_registration_number", response.data["errors"][0]["attr"])
 
     def test_delete_company_unauthenticated(self):
         self.client.credentials()

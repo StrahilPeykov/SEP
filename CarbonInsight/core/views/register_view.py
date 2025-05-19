@@ -1,5 +1,5 @@
-from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, status
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
@@ -9,18 +9,21 @@ from core.serializers import RegisterSerializer, UserSerializer
 
 User = get_user_model()
 
-
-class RegisterView(viewsets.GenericViewSet):
+@extend_schema_view(
+    create=extend_schema(
+        tags=["Authentication"],
+        summary="Register a new user",
+        description="Creates a new user and returns the user data along with access and refresh tokens.",
+    ),
+)
+class RegisterView(
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet
+):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
-    @extend_schema(
-        summary="Register a new user",
-        description="Creates a new user and returns the user data along with access and refresh tokens.",
-        tags=["Authentication"],
-    )
-    @action(detail=False, methods=["post"])
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         user = ser.save()

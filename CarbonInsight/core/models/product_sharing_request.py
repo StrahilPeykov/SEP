@@ -16,7 +16,7 @@ class ProductSharingRequest(models.Model):
         on_delete=models.CASCADE,
         related_name="requester"
     )
-    status = models.CharField(
+    status:ProductSharingRequestStatus = models.CharField(
         max_length=20,
         choices=ProductSharingRequestStatus.choices,
         default=ProductSharingRequestStatus.PENDING,

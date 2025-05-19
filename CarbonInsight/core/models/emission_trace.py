@@ -2,14 +2,24 @@ from copy import deepcopy, copy
 from dataclasses import field, dataclass
 from enum import Enum
 from numbers import Number
-from typing import Optional, List, Dict, Tuple, Set
+from typing import Optional, List, Dict, Tuple, Set, Literal
 
 from core.models.lifecycle_stage import LifecycleStage
+from core.models.reference_impact_unit import ReferenceImpactUnit
+
 
 class EmissionTraceMentionClass(Enum):
     INFORMATION = "Information"
     WARNING = "Warning"
     ERROR = "Error"
+
+class EmissionTraceSource(Enum):
+    PRODUCT = "Product"
+    TRANSPORT = "Transport"
+    MATERIAL = "Material"
+    USER_ENERGY = "UserEnergy"
+    PRODUCTION_ENERGY = "ProductionEnergy"
+    OTHER = "Other"
 
 @dataclass
 class EmissionTraceMention:
@@ -36,6 +46,8 @@ class EmissionTraceChild:
 @dataclass
 class EmissionTrace:
     label: str
+    reference_impact_unit: ReferenceImpactUnit
+    source: EmissionTraceSource
     methodology: Optional[str] = None
     # This contains the emissions up to this stage
     emissions_subtotal: Dict[LifecycleStage, float] = field(default_factory=dict)

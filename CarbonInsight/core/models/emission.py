@@ -35,7 +35,7 @@ class Emission(PolymorphicModel):
                 message = "Emission factors are overridden by user-provided values"
             ))
             for factor in self.override_factors.all():
-                emission_trace.emissions_subtotal[factor.lifecycle_stage] = factor.co_2_emission_factor
+                emission_trace.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = factor.co_2_emission_factor
 
         for line_item in self.line_items.all():
             emission_trace.mentions.append(EmissionTraceMention(

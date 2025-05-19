@@ -83,7 +83,7 @@ class ProductPermission(BasePermission):
         return self._is_company_member(request, view)
 
 
-class ProductBoMLineItemPermission(BasePermission):
+class ProductSubAPIPermission(BasePermission):
     """
     Grants access only if request.user is authenticated
     and is a member of the parent company.

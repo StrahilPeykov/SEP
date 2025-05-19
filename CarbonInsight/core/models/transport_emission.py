@@ -3,32 +3,36 @@ from django.db import models
 from django.db.models import Q
 
 from .emission import Emission
-from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionTraceSource
 from .lifecycle_stage import LifecycleStage
+from .reference_impact_unit import ReferenceImpactUnit
 
 
 class TransportEmission(Emission):
     distance = models.FloatField(
         validators=[MinValueValidator(0.0)],
+        help_text="Distance of the transport in km",
     )
     weight = models.FloatField(
         validators=[MinValueValidator(0.0)],
+        help_text="Weight of the transported product in kg",
     )
     reference = models.ForeignKey(
         "TransportEmissionReference",
         on_delete=models.CASCADE,
         related_name="transport_emissions",
+        help_text="Reference values for the transport emission",
     )
 
     @property
-    def tkg(self):
+    def tkm(self):
         return self.weight * self.distance
 
     def _get_emission_trace(self) -> EmissionTrace:
         reference_emission_trace = self.reference.get_emission_trace()
 
         # Multiply by the factor
-        reference_multiplied_factor = reference_emission_trace * self.tkg
+        reference_multiplied_factor = reference_emission_trace * self.tkm
         reference_multiplied_factor.label = f"Transport emission"
         reference_multiplied_factor.methodology = f"{self.weight}kg * {self.distance}km * {self.reference.name}"
 
@@ -39,7 +43,7 @@ class TransportEmission(Emission):
         verbose_name_plural = "Transport emissions"
 
     def __str__(self):
-        out = f"{self.tkg}tkm (Transport) for {self.parent_product.name}/"
+        out = f"{self.tkm}tkm (Transport) for {self.parent_product.name}/"
         if self.line_items.exists():
             for line_item in self.line_items.all():
                  out += f"{line_item.line_item_product.name}, "
@@ -73,10 +77,12 @@ class TransportEmissionReference(models.Model):
         root = EmissionTrace(
             label=f"Reference values for {self.name}",
             methodology=f"Database lookup",
+            reference_impact_unit=ReferenceImpactUnit.KILOGRAM,
+            source=EmissionTraceSource.TRANSPORT,
         )
         # Go through all factors and add them to the root
         for factor in self.reference_factors.all():
-            root.emissions_subtotal[factor.lifecycle_stage] = factor.co_2_emission_factor
+            root.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = factor.co_2_emission_factor
         root.mentions.append(EmissionTraceMention(
             mention_class=EmissionTraceMentionClass.INFORMATION,
             message="Estimated values"

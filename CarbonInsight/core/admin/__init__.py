@@ -11,6 +11,7 @@ from .production_energy_reference_emission_admin import *
 from .transport_reference_emission_admin import *
 from .user_energy_emission_admin import *
 
+admin.site.register(AIConversationLog, admin.ModelAdmin)
 admin.site.register(ProductSharingRequest, VersionAdmin)
 admin.site.register(User, UserAdmin)
 

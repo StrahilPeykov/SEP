@@ -31,3 +31,101 @@ class LifecycleStage(models.TextChoices):
     D = "D", "D - Reuse"
 
     OTHER = "Other", "Other"
+
+    def get_aas_value(self) -> str:
+        match self:
+            case LifecycleStage.A1:
+                return "A1 - raw material supply (and upstream production)"
+            case LifecycleStage.A2:
+                return "A2 - cradle-to-gate transport to factory"
+            case LifecycleStage.A3:
+                return "A3 - production"
+            case LifecycleStage.A4:
+                return "A4 - transport to final destination"
+            case LifecycleStage.A5:
+                return "A5 - installation"
+            case LifecycleStage.A1A3:
+                return "A1-A3"
+            case LifecycleStage.A4A5:
+                return "A4-A5"
+            case LifecycleStage.B1:
+                return "B1 - usage phase"
+            case LifecycleStage.B2:
+                return "B2 - maintenance"
+            case LifecycleStage.B3:
+                return "B3 - repair"
+            case LifecycleStage.B4:
+                return "B4 - replacement"
+            case LifecycleStage.B5:
+                return "B5 - update/upgrade, refurbishing"
+            case LifecycleStage.B6:
+                return "B6 - operational energy use"
+            case LifecycleStage.B7:
+                return "B7 - operational water use"
+            case LifecycleStage.B1B7:
+                return "B1-B7"
+            case LifecycleStage.C1:
+                return "C1 - reassembly"
+            case LifecycleStage.C2:
+                return "C2 - transport to recycler"
+            case LifecycleStage.C3:
+                return "C3 - recycling, waste treatment"
+            case LifecycleStage.C4:
+                return "C4 - landfill"
+            case LifecycleStage.C1C4:
+                return "C1-C4"
+            case LifecycleStage.C2C4:
+                return "C2-C4"
+            case LifecycleStage.D:
+                return "D - reuse"
+            case _:
+                return "Other"
+
+    def get_aas_value_id(self) -> str:
+        match self:
+            case LifecycleStage.A1:
+                return "0173-1#07-ABU208#003"
+            case LifecycleStage.A2:
+                return "0173-1#07-ABU209#003"
+            case LifecycleStage.A3:
+                return "0173-1#07-ABU210#003"
+            case LifecycleStage.A4:
+                return "0173-1#07-ABU211#003"
+            case LifecycleStage.A5:
+                return "0173-1#07-ACC016#001"
+            case LifecycleStage.A1A3:
+                return "0173-1#07-ABZ789#003"
+            case LifecycleStage.A4A5:
+                return "0173-1#07-ACC013#001"
+            case LifecycleStage.B1:
+                return "0173-1#07-ABU212#003"
+            case LifecycleStage.B2:
+                return "0173-1#07-ABV498#003"
+            case LifecycleStage.B3:
+                return "0173-1#07-ABV497#003"
+            case LifecycleStage.B4:
+                return "0173-1#07-ACC017#001"
+            case LifecycleStage.B5:
+                return "0173-1#07-ABV499#003"
+            case LifecycleStage.B6:
+                return "0173-1#07-ABV500#003"
+            case LifecycleStage.B7:
+                return "0173-1#07-ABV501#003"
+            case LifecycleStage.B1B7:
+                return "0173-1#07-ACC014#001"
+            case LifecycleStage.C1:
+                return "0173-1#07-ABV502#003"
+            case LifecycleStage.C2:
+                return "0173-1#07-ABU213#003"
+            case LifecycleStage.C3:
+                return "0173-1#07-ABV503#003"
+            case LifecycleStage.C4:
+                return "0173-1#07-ABV504#003"
+            case LifecycleStage.C1C4:
+                return "0173-1#07-ACC015#001"
+            case LifecycleStage.C2C4:
+                return "0173-1#07-ACC018#001"
+            case LifecycleStage.D:
+                return "0173-1#07-ABU214#003"
+            case _:
+                return "Other"

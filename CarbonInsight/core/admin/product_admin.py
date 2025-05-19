@@ -40,8 +40,8 @@ class ProductSharingRequestInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(VersionAdmin):
     model = Product
-    list_display = ("name", "supplier", "manufacturer", "sku", "get_emission_total", "get_emission_trace")
-    search_fields = ("name", "supplier__name", "manufacturer", "sku",)
+    list_display = ("name", "supplier", "manufacturer_name", "sku", "get_emission_total", "get_emission_trace")
+    search_fields = ("name", "supplier__name", "manufacturer_name", "sku",)
     ordering = ("name",)
     list_filter = (
         ("supplier", RelatedDropdownFilter),

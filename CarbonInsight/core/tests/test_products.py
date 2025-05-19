@@ -44,7 +44,13 @@ class ProductAPITest(APITestCase):
             name="Red paint",
             description="Red paint",
             supplier=self.red_company,
-            manufacturer="Red company",
+            manufacturer_name="Red company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="12345678999",
             is_public=True
         )
@@ -53,7 +59,13 @@ class ProductAPITest(APITestCase):
             name="Secret Plan Red",
             description="Secret Plan Red",
             supplier=self.red_company,
-            manufacturer="Red company",
+            manufacturer_name="Red company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="111222333444",
             is_public=False
         )
@@ -62,7 +74,13 @@ class ProductAPITest(APITestCase):
             name="Blue paint",
             description="Blue paint",
             supplier=self.blue_company,
-            manufacturer="Blue company",
+            manufacturer_name="Blue company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="12345678999",
             is_public=True
         )
@@ -71,7 +89,13 @@ class ProductAPITest(APITestCase):
             name="Secret Plan Blue",
             description="Secret Plan Blue",
             supplier=self.blue_company,
-            manufacturer="Blue company",
+            manufacturer_name="Blue company",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="De Zaale",
+            manufacturer_zip_code="5612AZ",
+            year_of_construction=2025,
+            family="Paint",
             sku="111222333444",
             is_public=False
         )
@@ -94,7 +118,13 @@ class ProductAPITest(APITestCase):
         response = self.client.post(url,
                                     data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                           })
@@ -107,7 +137,13 @@ class ProductAPITest(APITestCase):
         response = self.client.post(url,
                                     data={"name": "Orange paint",
                                           "description": "Orange paint",
-                                          "manufacturer": "Blue company",
+                                          "manufacturer_name": "Blue company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                           })
@@ -115,11 +151,17 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(Product.objects.filter(name="Orange paint").exists())
 
-    def test_products_crete_product_missing_name(self):
+    def test_products_create_product_missing_name(self):
         url = reverse("product-list", kwargs={"company_pk": self.red_company.id})
         response = self.client.post(url,
                                     data={"description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku": "12345678988",
                                           "is_public": True
                                           })
@@ -127,11 +169,17 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(Product.objects.filter(name="Magenta paint").exists())
 
-    def test_products_crete_product_missing_manufacturer(self):
+    def test_products_create_product_missing_manufacturer(self):
         url = reverse("product-list", kwargs={"company_pk": self.red_company.id})
         response = self.client.post(url,
                                     data={"name": "Magenta paint",
                                           "description": "Magenta paint",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                           })
@@ -139,12 +187,18 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(Product.objects.filter(name="Magenta paint").exists())
 
-    def test_products_crete_product_missing_sku(self):
+    def test_products_create_product_missing_sku(self):
         url = reverse("product-list", kwargs={"company_pk": self.red_company.id})
         response = self.client.post(url,
                                     data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "is_public": True
                                           })
 
@@ -197,7 +251,13 @@ class ProductAPITest(APITestCase):
         response = self.client.put(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -211,7 +271,13 @@ class ProductAPITest(APITestCase):
         response = self.client.put(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -224,7 +290,13 @@ class ProductAPITest(APITestCase):
         url = reverse("product-detail", args=[self.red_company.id, 1])
         response = self.client.put(url,
                                    data={"description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -238,6 +310,12 @@ class ProductAPITest(APITestCase):
         response = self.client.put(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -251,7 +329,13 @@ class ProductAPITest(APITestCase):
         response = self.client.put(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "is_public": True
                                          }
                                    )
@@ -264,7 +348,13 @@ class ProductAPITest(APITestCase):
         response = self.client.put(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -277,7 +367,13 @@ class ProductAPITest(APITestCase):
         response = self.client.put(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -291,7 +387,13 @@ class ProductAPITest(APITestCase):
         response = self.client.patch(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -305,7 +407,13 @@ class ProductAPITest(APITestCase):
         response = self.client.patch(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -319,7 +427,13 @@ class ProductAPITest(APITestCase):
         response = self.client.patch(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
@@ -332,7 +446,13 @@ class ProductAPITest(APITestCase):
         response = self.client.patch(url,
                                    data={"name": "Magenta paint",
                                           "description": "Magenta paint",
-                                          "manufacturer": "Red company",
+                                          "manufacturer_name": "Red company",
+                                          "manufacturer_country": "NL",
+                                            "manufacturer_city": "Eindhoven",
+                                            "manufacturer_street": "De Zaale",
+                                            "manufacturer_zip_code": "5612AZ",
+                                            "year_of_construction": 2025,
+                                            "family": "Paint",
                                           "sku":"12345678988",
                                           "is_public": True
                                          }
