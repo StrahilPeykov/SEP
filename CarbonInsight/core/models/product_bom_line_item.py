@@ -2,8 +2,10 @@ import logging
 from typing import Union, Literal, Optional
 
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import F, Q
 
 from .emission_trace import EmissionTrace
 from .product_sharing_request import ProductSharingRequestStatus, ProductSharingRequest
@@ -26,10 +28,53 @@ class ProductBoMLineItem(models.Model):
         validators=[MinValueValidator(0.0)],
     )
 
+    def clean(self):
+        super().clean()
+        if self._creates_cycle():
+            raise ValidationError("Cycle detected in BoM: this would create a loop")
+
+    def _creates_cycle(self) -> bool:
+        start = self.parent_product
+        target = self.line_item_product
+        visited = set()
+
+        def dfs(prod):
+            if prod.id == start.id:
+                return True
+            for li in prod.line_items.all():
+                child = li.line_item_product
+                if child.id in visited:
+                    continue
+                visited.add(child.id)
+                if dfs(child):
+                    return True
+            return False
+
+        return dfs(target)
+
+    def save(self, *args, **kwargs):
+        # enforce clean() on save
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+        # Auto-approve sharing if both items belong to the same supplier
+        if self.parent_product.supplier == self.line_item_product.supplier:
+            ProductSharingRequest.objects.update_or_create(
+                product=self.line_item_product,
+                requester=self.parent_product.supplier,
+                status=ProductSharingRequestStatus.ACCEPTED,
+            )
+
     class Meta:
         verbose_name = "Product BoM line item"
         verbose_name_plural = "Product BoM line items"
         unique_together = ("parent_product", "line_item_product")
+        constraints = [
+            models.CheckConstraint(
+                check=~Q(parent_product=F("line_item_product")),
+                name="prevent_self_reference_bom_line_item"
+            )
+        ]
 
     def __str__(self):
         return f"{self.parent_product.name}/{self.line_item_product.name} x{self.quantity}"

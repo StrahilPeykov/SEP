@@ -40,8 +40,8 @@ class Product(models.Model):
     sku = models.CharField(max_length=255)
     reference_impact_unit = models.CharField(
         max_length=255,
-        choices=LifecycleStage.choices,
-        default=LifecycleStage.OTHER,
+        choices=ReferenceImpactUnit.choices,
+        default=ReferenceImpactUnit.OTHER,
     )
     # is_public describes whether the product is listed on the public catalogue
     is_public = models.BooleanField(default=True)
@@ -112,6 +112,15 @@ class Product(models.Model):
             else:
                 # Get the line item's emissions
                 emission_trace = line_item.line_item_product.get_emission_trace()
+                # Hide the children
+                emission_trace.children.clear()
+                emission_trace.mentions.append(
+                    EmissionTraceMention(
+                        mention_class=EmissionTraceMentionClass.INFORMATION,
+                        message=f"Further emission trace details are hidden to protect "
+                                f"{line_item.line_item_product.supplier.name}'s confidentiality."
+                    )
+                )
 
             # Add the line item to the root
             root.children.add(EmissionTraceChild(
