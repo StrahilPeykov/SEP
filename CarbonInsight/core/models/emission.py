@@ -32,7 +32,7 @@ class Emission(PolymorphicModel):
         real_instance = self.get_real_instance()
         emission_trace = real_instance._get_emission_trace()
         emission_trace.related_object = real_instance
-        emission_trace.pcf_calculation_method = self.pcf_calculation_method
+        emission_trace.pcf_calculation_method = PcfCalculationMethod(self.pcf_calculation_method)
 
         # Check if there are any EmissionOverrideFactors
         # If so, replace the emission trace with the overridden values

@@ -350,7 +350,7 @@ def product_to_aas(product: 'Product') -> Tuple[str | Iterable[str], DictObjectS
                 ),)
             ),
             display_name=MultiLanguageNameType(
-                {"en": f"{emission_trace.label} - {emission_trace.methodology}"}
+                {"en": f"{emission_trace.label}"}
             )
         )
         pcf_list.value.add(pcf_step_collection)

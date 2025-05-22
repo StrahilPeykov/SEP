@@ -2,7 +2,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from core.models import CompanyMembership, Product,ProductBoMLineItem
+from core.models import CompanyMembership, Product, ProductBoMLineItem, \
+    ProductionEnergyEmissionReference, EmissionBoMLink, ProductionEnergyEmission
 from core.models.company import Company
 
 User = get_user_model()
@@ -129,6 +130,123 @@ class ProductAPITest(APITestCase):
             sku="111222333444",
             is_public=False
         )
+
+        self.product_for_emission_linking_parent = Product.objects.create(
+            name="Product For Emission Linking Parent",
+            supplier=self.red_company,
+            manufacturer_name="Test Manufacturer",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="Test Street",
+            manufacturer_zip_code="1234AB",
+            year_of_construction=2025,
+            family="Test",
+            sku="EMLINK001",
+            is_public=True
+        )
+        self.product_for_emission_linking_child = Product.objects.create(
+            name="Product For Emission Linking Child",
+            supplier=self.red_company,
+            manufacturer_name="Test Manufacturer",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="Test Street",
+            manufacturer_zip_code="1234AB",
+            year_of_construction=2025,
+            family="Test",
+            sku="EMLINK002",
+            is_public=True
+        )
+        self.product_for_emission_linking_other = Product.objects.create(
+            name="Product For Emission Linking Other",
+            supplier=self.red_company,
+            manufacturer_name="Test Manufacturer",
+            manufacturer_country="NL",
+            manufacturer_city="Eindhoven",
+            manufacturer_street="Test Street",
+            manufacturer_zip_code="1234AB",
+            year_of_construction=2025,
+            family="Test",
+            sku="EMLINK003",
+            is_public=True
+        )
+
+        self.production_energy_ref = ProductionEnergyEmissionReference.objects.create(
+            common_name="Test Production Energy Ref")
+
+    def test_production_energy_emission_linked_to_same_product_bom_item_id(self):
+
+        bom_item = ProductBoMLineItem.objects.create(
+            parent_product=self.product_for_emission_linking_parent,
+            line_item_product=self.product_for_emission_linking_child,
+            quantity=1
+        )
+
+        production_emission = ProductionEnergyEmission.objects.create(
+            parent_product=self.product_for_emission_linking_child,
+            energy_consumption=25.0,
+            reference=self.production_energy_ref
+        )
+
+        EmissionBoMLink.objects.create(
+            emission=production_emission,
+            line_item=bom_item
+        )
+
+        url = reverse(
+            "product-production-energy-emissions-detail",
+            args=[self.red_company.id, self.product_for_emission_linking_child.id, production_emission.id]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('line_items', response.data)
+        self.assertIsInstance(response.data['line_items'], list)
+        self.assertIn(bom_item.id, response.data['line_items'],
+                      f"BOM item ID {bom_item.id} not in production emission's line_items.")
+
+    def test_production_energy_emission_linked_to_other_product_bom_item_id(self):
+
+        blue_company_user = User.objects.create_user(
+            username="blue@bluecompany.com", email="blue@bluecompany.com", password="passwordblue")
+        CompanyMembership.objects.create(user=blue_company_user, company=self.blue_company)
+        self.client.force_authenticate(user=blue_company_user)
+        url_blue_token = reverse("token_obtain_pair")
+        response_blue_token = self.client.post(
+            url_blue_token,
+            {"username": "blue@bluecompany.com", "password": "passwordblue"},
+            format="json"
+        )
+        self.assertEqual(response_blue_token.status_code, status.HTTP_200_OK)
+        access_token_blue = response_blue_token.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token_blue}")
+
+        bom_item_other = ProductBoMLineItem.objects.create(
+            parent_product=self.red_secret_plans,
+            line_item_product=self.blue_secret_plans,
+            quantity=1
+        )
+
+        production_emission_other_product = ProductionEnergyEmission.objects.create(
+            parent_product=self.magenta_paint,
+            energy_consumption=30.0,
+            reference=self.production_energy_ref
+        )
+
+        EmissionBoMLink.objects.create(
+            emission=production_emission_other_product,
+            line_item=bom_item_other
+        )
+
+        url = reverse(
+            "product-production-energy-emissions-detail",
+            args=[self.blue_company.id, self.magenta_paint.id, production_emission_other_product.id]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('line_items', response.data)
+        self.assertIsInstance(response.data['line_items'], list)
+        self.assertIn(bom_item_other.id, response.data['line_items'],
+                         f"BOM item ID {bom_item_other.id} unexpectedly not found in production emission's line_items: {response.data['line_items']}.")
 
     def test_get_product_list_bom(self):
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
