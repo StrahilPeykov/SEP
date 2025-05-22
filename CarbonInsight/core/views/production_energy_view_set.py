@@ -5,7 +5,6 @@ from rest_framework.generics import get_object_or_404
 from core.models import Company, Product
 from core.models.production_energy_emission import ProductionEnergyEmission
 from core.permissions import ProductSubAPIPermission
-from core.serializers import CompanySerializer
 from core.serializers.emission_serializers import ProductionEnergyEmissionSerializer
 from core.views.mixins.company_mixin import CompanyMixin
 from core.views.mixins.product_mixin import ProductMixin

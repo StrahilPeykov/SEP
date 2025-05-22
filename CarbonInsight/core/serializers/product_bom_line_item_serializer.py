@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import serializers
 from core.models import ProductBoMLineItem, ProductSharingRequestStatus, Product, Emission, TransportEmission, \
     MaterialEmission, UserEnergyEmission, ProductionEnergyEmission
-from core.serializers import ProductSerializer
+from core.serializers.product_serializer import ProductSerializer
 
 class EmissionBoMSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField(label="Emission type")
@@ -55,12 +55,5 @@ class ProductBoMLineItemSerializer(serializers.ModelSerializer):
         fields = ("id", "quantity", "line_item_product", "line_item_product_id", "parent_product", "product_sharing_request_status", "emissions")
         read_only_fields = ("parent_product", "line_item_product")
 
-    @extend_schema_field({
-        'type': 'string',
-        'enum': ['Not requested'] + [c.value for c in ProductSharingRequestStatus]
-    })
-    def get_product_sharing_request_status(self, obj:ProductBoMLineItem) -> str:
-        product_sharing_request = obj.product_sharing_request
-        if product_sharing_request is None:
-            return "Not requested"
-        return ProductSharingRequestStatus(product_sharing_request.status)
+    def get_product_sharing_request_status(self, obj:ProductBoMLineItem) -> ProductSharingRequestStatus:
+        return obj.product_sharing_request_status

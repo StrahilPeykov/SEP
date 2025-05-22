@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from core.serializers import RegisterSerializer, UserSerializer
+from core.serializers.register_serializer import RegisterSerializer
+from core.serializers.user_serializer import UserSerializer
 
 User = get_user_model()
 

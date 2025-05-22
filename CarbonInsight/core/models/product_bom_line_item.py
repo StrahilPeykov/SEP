@@ -57,14 +57,6 @@ class ProductBoMLineItem(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
-        # Auto-approve sharing if both items belong to the same supplier
-        if self.parent_product.supplier == self.line_item_product.supplier:
-            ProductSharingRequest.objects.update_or_create(
-                product=self.line_item_product,
-                requester=self.parent_product.supplier,
-                status=ProductSharingRequestStatus.ACCEPTED,
-            )
-
     class Meta:
         verbose_name = "Product BoM line item"
         verbose_name_plural = "Product BoM line items"
@@ -84,3 +76,12 @@ class ProductBoMLineItem(models.Model):
         return self.line_item_product.product_sharing_requests.filter(
             requester=self.parent_product.supplier
         ).first()
+
+    @property
+    def product_sharing_request_status(self) -> ProductSharingRequestStatus:
+        if self.line_item_product.supplier == self.parent_product.supplier:
+            return ProductSharingRequestStatus.ACCEPTED
+        psr = self.product_sharing_request
+        if psr is None:
+            return ProductSharingRequestStatus.NOT_REQUESTED
+        return psr.status

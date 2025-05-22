@@ -1,9 +1,13 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q, CheckConstraint
+
 
 class ProductSharingRequestStatus(models.TextChoices):
     PENDING = "Pending", "Pending"
     ACCEPTED = "Accepted", "Accepted"
     REJECTED = "Rejected", "Rejected"
+    NOT_REQUESTED = "Not requested", "Not requested"
 
 class ProductSharingRequest(models.Model):
     product = models.ForeignKey(
@@ -18,18 +22,24 @@ class ProductSharingRequest(models.Model):
     )
     status:ProductSharingRequestStatus = models.CharField(
         max_length=20,
-        choices=ProductSharingRequestStatus.choices,
+        choices=[
+            (choice.value, choice.label)
+            for choice in ProductSharingRequestStatus
+            if choice is not ProductSharingRequestStatus.NOT_REQUESTED
+        ],
         default=ProductSharingRequestStatus.PENDING,
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
-    def is_approved(self):
-        return self.status == ProductSharingRequestStatus.ACCEPTED
-
-    @property
     def supplier(self):
         return self.product.supplier
+
+    def clean(self):
+        if self.product.supplier == self.requester:
+            raise ValidationError(
+                {"requester": "Requester must be different from the supplier."}
+            )
 
     class Meta:
         verbose_name = "Product sharing request"

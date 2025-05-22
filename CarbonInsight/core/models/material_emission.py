@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import Q
 
 from .emission import Emission
-from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionTraceSource
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
 from .lifecycle_stage import LifecycleStage
 from .reference_impact_unit import ReferenceImpactUnit
 
@@ -64,7 +64,7 @@ class MaterialEmissionReference(models.Model):
             label=f"Reference values for {self.name}",
             methodology=f"Database lookup",
             reference_impact_unit=ReferenceImpactUnit.KILOGRAM,
-            source=EmissionTraceSource.MATERIAL,
+            related_object=self
         )
         # Go through all factors and add them to the root
         for factor in self.reference_factors.all():

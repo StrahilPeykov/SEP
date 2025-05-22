@@ -373,7 +373,7 @@ def product_to_aas(product: 'Product') -> Tuple[str | Iterable[str], DictObjectS
         pcf_source = Property(
             id_short="PcfSource",
             value_type=model.datatypes.String,
-            value = emission_trace.source.name,
+            value = emission_trace.source,
         )
         pcf_step_collection.value.add(pcf_source)
 
@@ -398,7 +398,7 @@ def product_to_aas(product: 'Product') -> Tuple[str | Iterable[str], DictObjectS
 
         pcf_step_collection.value.add(pcf_calculation_methods)
 
-        """
+
         pcf_calculation_method = Property(
             id_short=None,
             semantic_id=model.ExternalReference(
@@ -409,16 +409,14 @@ def product_to_aas(product: 'Product') -> Tuple[str | Iterable[str], DictObjectS
             ),
             value_type=model.datatypes.String
         )
-        # TODO: Implement properly by asking the user what methodology was used
-        pcf_calculation_method.value = "IEC 63372"
+        pcf_calculation_method.value = emission_trace.pcf_calculation_method.get_aas_value()
         pcf_calculation_method.value_id = model.ExternalReference(
             (model.Key(
                 type_=model.KeyTypes.GLOBAL_REFERENCE,
-                value="0173-1#07-ACC019#001"
+                value=emission_trace.pcf_calculation_method.get_aas_value_id(),
             ),)
         )
         pcf_calculation_methods.value.add(pcf_calculation_method)
-        """
 
         pcf_co_2_eq = Property(
             id_short="PcfCO2eq",

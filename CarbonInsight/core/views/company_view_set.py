@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from core.models import Company, CompanyMembership
 from core.permissions import IsCompanyMember, CanEditCompany
-from core.serializers import CompanySerializer
+from core.serializers.company_serializer import CompanySerializer
 from core.serializers.user_serializer import UserUsernameSerializer, UserSerializer
 from core.views.mixins.company_mixin import CompanyMixin
 

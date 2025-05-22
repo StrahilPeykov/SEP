@@ -225,10 +225,12 @@ class ProductViewSet(
 
     @extend_schema(
         tags=["Products"],
-        summary="Export product DPP to SCSN XML format",
+        summary="Export product PCF to SCSN XML format (partial)",
         description=(
-                "Export the product's DPP data to SCSN XML format. "
-                "The XML file will be returned as a downloadable attachment."
+                "Export the product's PCF data to SCSN XML format. "
+                "The XML file will be returned as a downloadable attachment. "
+                "The returned file is NOT SCSN compliant. It only includes the PCF data. "
+                "The user is expected to append our data to their own SCSN XML file. "
         ),
         responses={
             (200, 'application/xml'): OpenApiTypes.STR,
@@ -236,14 +238,38 @@ class ProductViewSet(
     )
     @action(detail=True, methods=["get"],
             permission_classes=[IsAuthenticated, ProductPermission],
-            url_path="export/scsn_xml")
-    def scsn_xml(self, request, *args, **kwargs):
+            url_path="export/scsn_pcf_xml")
+    def scsn_pcf_xml(self, request, *args, **kwargs):
         product = self.get_object()
-        file = product.export_to_scsn_xml()
+        file = product.export_to_scsn_pcf_xml()
         return FileResponse(
             file,
             as_attachment=True,
-            filename=f"{product.name}_scsn.xml"
+            filename=f"{product.name}_scsn_pcf.xml"
+        )
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Export product PCF to SCSN XML format (full)",
+        description=(
+                "Export the product's PCF data to SCSN XML format. "
+                "The XML file will be returned as a downloadable attachment."
+                "The returned file is SCSN compliant but with placeholders for certain fields. "
+        ),
+        responses={
+            (200, 'application/xml'): OpenApiTypes.STR,
+        }
+    )
+    @action(detail=True, methods=["get"],
+            permission_classes=[IsAuthenticated, ProductPermission],
+            url_path="export/scsn_full_xml")
+    def scsn_full_xml(self, request, *args, **kwargs):
+        product = self.get_object()
+        file = product.export_to_scsn_full_xml()
+        return FileResponse(
+            file,
+            as_attachment=True,
+            filename=f"{product.name}_scsn_full.xml"
         )
 
     @extend_schema(

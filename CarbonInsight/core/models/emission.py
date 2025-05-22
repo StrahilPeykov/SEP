@@ -3,6 +3,7 @@ from polymorphic.models import PolymorphicModel
 
 from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
 from .lifecycle_stage import LifecycleStage
+from .pcf_calculation_method import PcfCalculationMethod
 
 
 class Emission(PolymorphicModel):
@@ -12,6 +13,11 @@ class Emission(PolymorphicModel):
         "ProductBoMLineItem",
         through="EmissionBoMLink",
         related_name="emissions",
+    )
+    pcf_calculation_method = models.CharField(
+        max_length=255,
+        choices=PcfCalculationMethod.choices,
+        default=PcfCalculationMethod.ISO_14040_ISO_14044,
     )
 
     class Meta:
@@ -23,7 +29,10 @@ class Emission(PolymorphicModel):
         super().save(*args, **kwargs)
 
     def get_emission_trace(self) -> EmissionTrace:
-        emission_trace = self.get_real_instance()._get_emission_trace()
+        real_instance = self.get_real_instance()
+        emission_trace = real_instance._get_emission_trace()
+        emission_trace.related_object = real_instance
+        emission_trace.pcf_calculation_method = self.pcf_calculation_method
 
         # Check if there are any EmissionOverrideFactors
         # If so, replace the emission trace with the overridden values

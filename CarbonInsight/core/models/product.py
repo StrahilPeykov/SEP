@@ -6,13 +6,13 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 from django_countries.fields import CountryField
 
-from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionTraceChild, \
-    EmissionTraceSource
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionTraceChild
 from .lifecycle_stage import LifecycleStage
+from .pcf_calculation_method import PcfCalculationMethod
 from .product_sharing_request import ProductSharingRequest, ProductSharingRequestStatus
 from .reference_impact_unit import ReferenceImpactUnit
 from ..exporters.aas import product_to_aas_aasx, product_to_aas_json, product_to_aas_xml
-from ..exporters.scsn import product_to_scsn_xml
+from ..exporters.scsn import product_to_scsn_full_xml, product_to_scsn_pcf_xml
 
 if TYPE_CHECKING:
     from .company import Company
@@ -41,7 +41,12 @@ class Product(models.Model):
     reference_impact_unit = models.CharField(
         max_length=255,
         choices=ReferenceImpactUnit.choices,
-        default=ReferenceImpactUnit.OTHER,
+        default=ReferenceImpactUnit.PIECE,
+    )
+    pcf_calculation_method = models.CharField(
+        max_length=255,
+        choices=PcfCalculationMethod.choices,
+        default=PcfCalculationMethod.ISO_14040_ISO_14044,
     )
     # is_public describes whether the product is listed on the public catalogue
     is_public = models.BooleanField(default=True)
@@ -63,7 +68,8 @@ class Product(models.Model):
             label=f"Product: {self.name}",
             methodology=f"Sum up all the product-level emissions and its line items' emissions.",
             reference_impact_unit=ReferenceImpactUnit(self.reference_impact_unit),
-            source=EmissionTraceSource.PRODUCT,
+            related_object=self,
+            pcf_calculation_method=PcfCalculationMethod(self.pcf_calculation_method),
         )
         # Add own emissions
         for emission_obj in self.emissions.all():
@@ -74,35 +80,43 @@ class Product(models.Model):
             emission_trace = emission_obj_real.get_emission_trace()
             root.children.add(EmissionTraceChild(
                 emission_trace=emission_trace,
-                quantity=emission_obj_real.quantity
+                quantity=emission_obj_real.quantity,
             ))
 
         # Add emissions from line items
         for line_item in self.line_items.all():
             # Check if the line item is shared and if the request is accepted
-            if line_item.product_sharing_request is None:
-                emission_trace = EmissionTrace(label=f"Product: {line_item.line_item_product.name}",
-                                               reference_impact_unit=ReferenceImpactUnit.OTHER,
-                                               source=EmissionTraceSource.PRODUCT)
+            if line_item.product_sharing_request_status is None:
+                emission_trace = EmissionTrace(
+                    label=f"Product: {line_item.line_item_product.name}",
+                    reference_impact_unit=ReferenceImpactUnit.OTHER,
+                    related_object=line_item.line_item_product,
+                    pcf_calculation_method=PcfCalculationMethod(self.pcf_calculation_method)
+                )
                 emission_trace.mentions.append(EmissionTraceMention(
                     mention_class=EmissionTraceMentionClass.ERROR,
                     message="You have not requested access to this product's PCF data yet."
                 ))
 
-            elif line_item.product_sharing_request.status == ProductSharingRequestStatus.PENDING:
-                emission_trace = EmissionTrace(label=f"Product: {line_item.line_item_product.name}",
-                                               reference_impact_unit=ReferenceImpactUnit.OTHER,
-                                               source=EmissionTraceSource.PRODUCT)
+            elif line_item.product_sharing_request_status == ProductSharingRequestStatus.PENDING:
+                emission_trace = EmissionTrace(
+                    label=f"Product: {line_item.line_item_product.name}",
+                    reference_impact_unit=ReferenceImpactUnit.OTHER,
+                    related_object=line_item.line_item_product,
+                    pcf_calculation_method=PcfCalculationMethod(self.pcf_calculation_method))
                 emission_trace.mentions.append(EmissionTraceMention(
                     mention_class=EmissionTraceMentionClass.ERROR,
                     message=f"{line_item.product_sharing_request.supplier.name} "
                             f"has not accepted your PCF data sharing request yet."
                 ))
 
-            elif line_item.product_sharing_request.status == ProductSharingRequestStatus.REJECTED:
-                emission_trace = EmissionTrace(label=f"Product: {line_item.line_item_product.name}",
-                                               reference_impact_unit=ReferenceImpactUnit.OTHER,
-                                               source=EmissionTraceSource.PRODUCT)
+            elif line_item.product_sharing_request_status == ProductSharingRequestStatus.REJECTED:
+                emission_trace = EmissionTrace(
+                    label=f"Product: {line_item.line_item_product.name}",
+                    reference_impact_unit=ReferenceImpactUnit.OTHER,
+                    related_object=line_item.line_item_product,
+                    pcf_calculation_method=PcfCalculationMethod(self.pcf_calculation_method)
+                )
                 emission_trace.mentions.append(EmissionTraceMention(
                     mention_class=EmissionTraceMentionClass.ERROR,
                     message=f"{line_item.product_sharing_request.supplier.name} "
@@ -154,7 +168,8 @@ class Product(models.Model):
     export_to_aas_aasx = product_to_aas_aasx
     export_to_aas_xml = product_to_aas_xml
     export_to_aas_json = product_to_aas_json
-    export_to_scsn_xml = product_to_scsn_xml
+    export_to_scsn_full_xml = product_to_scsn_full_xml
+    export_to_scsn_pcf_xml = product_to_scsn_pcf_xml
 
     def __str__(self):
         return self.name

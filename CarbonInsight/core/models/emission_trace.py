@@ -2,24 +2,22 @@ from copy import deepcopy, copy
 from dataclasses import field, dataclass
 from enum import Enum
 from numbers import Number
-from typing import Optional, List, Dict, Tuple, Set, Literal
+from typing import Optional, List, Dict, Tuple, Set, Literal, Union, TYPE_CHECKING, Any
+
+from core.serializers.null_serializer import NullSerializer
 
 from core.models.lifecycle_stage import LifecycleStage
+from core.models.pcf_calculation_method import PcfCalculationMethod
 from core.models.reference_impact_unit import ReferenceImpactUnit
 
+if TYPE_CHECKING:
+    from core.models import Product, Emission, UserEnergyEmissionReference, TransportEmissionReference, \
+        ProductionEnergyEmissionReference, MaterialEmissionReference
 
 class EmissionTraceMentionClass(Enum):
     INFORMATION = "Information"
     WARNING = "Warning"
     ERROR = "Error"
-
-class EmissionTraceSource(Enum):
-    PRODUCT = "Product"
-    TRANSPORT = "Transport"
-    MATERIAL = "Material"
-    USER_ENERGY = "UserEnergy"
-    PRODUCTION_ENERGY = "ProductionEnergy"
-    OTHER = "Other"
 
 @dataclass
 class EmissionTraceMention:
@@ -47,13 +45,44 @@ class EmissionTraceChild:
 class EmissionTrace:
     label: str
     reference_impact_unit: ReferenceImpactUnit
-    source: EmissionTraceSource
+    related_object: Any = field(metadata={'serializer_field': NullSerializer()}, default=None)
     methodology: Optional[str] = None
+    pcf_calculation_method: PcfCalculationMethod = PcfCalculationMethod.ISO_14040_ISO_14044
     # This contains the emissions up to this stage
     emissions_subtotal: Dict[LifecycleStage, float] = field(default_factory=dict)
     # key = LifecycleStage; value = quantity
     children: Set[EmissionTraceChild] = field(default_factory=set)
     mentions: List[EmissionTraceMention] = field(default_factory=list)
+
+    @property
+    def source(self) -> Optional[str]:
+        from core.models import (Product, Emission,
+                                 UserEnergyEmission, UserEnergyEmissionReference,
+                                 TransportEmission, TransportEmissionReference,
+                                 ProductionEnergyEmission, ProductionEnergyEmissionReference,
+                                 MaterialEmission, MaterialEmissionReference)  # Import here to avoid circular import
+        if isinstance(self.related_object, Product):
+            return "Product"
+        elif isinstance(self.related_object, TransportEmissionReference):
+            return "TransportEmissionReference"
+        elif isinstance(self.related_object, UserEnergyEmissionReference):
+            return "UserEnergyEmissionReference"
+        elif isinstance(self.related_object, ProductionEnergyEmissionReference):
+            return "ProductionEnergyEmissionReference"
+        elif isinstance(self.related_object, MaterialEmissionReference):
+            return "MaterialEmissionReference"
+        elif isinstance(self.related_object, TransportEmission):
+            return "TransportEmission"
+        elif isinstance(self.related_object, UserEnergyEmission):
+            return "UserEnergyEmission"
+        elif isinstance(self.related_object, ProductionEnergyEmission):
+            return "ProductionEnergyEmission"
+        elif isinstance(self.related_object, MaterialEmission):
+            return "MaterialEmission"
+        elif isinstance(self.related_object, Emission):
+            return "Emission"
+        else:
+            return None
 
     def __str__(self):
         return f"EmissionTrace(label={self.label}, emissions={self.emissions_subtotal}, children={self.children})"
@@ -77,6 +106,7 @@ class EmissionTrace:
                 quantity=quantity
             )
         )
+        et.mentions.clear()
         return et
 
     def sum_up(self):
@@ -92,4 +122,4 @@ class EmissionTrace:
 
     @property
     def total(self) -> float:
-        return float(self)
+        return round(float(self), 2)
