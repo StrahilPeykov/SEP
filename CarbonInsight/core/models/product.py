@@ -164,6 +164,7 @@ class Product(models.Model):
         verbose_name = "Product"
         verbose_name_plural = "Products"
         ordering = ["name"]
+        unique_together = ["supplier", "name", "manufacturer_name", "sku"]
 
     export_to_aas_aasx = product_to_aas_aasx
     export_to_aas_xml = product_to_aas_xml

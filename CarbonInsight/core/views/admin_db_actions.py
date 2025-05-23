@@ -97,6 +97,14 @@ def populate_db(request):
         name="A14 processor",
         description="Main processor used in iPhones",
         supplier=tsmc,
+        manufacturer_name="Red company",
+        manufacturer_country="NL",
+        manufacturer_city="Eindhoven",
+        manufacturer_street="De Zaale",
+        manufacturer_zip_code="5612AZ",
+        year_of_construction=2025,
+        family="Paint",
+        sku="12345678999",
     )
     processor_material_emission  = MaterialEmission.objects.create(
         parent_product=processor,
@@ -107,6 +115,14 @@ def populate_db(request):
         name="Camera module",
         description="Camera module used in various phones",
         supplier=samsung,
+        manufacturer_name="Red company",
+        manufacturer_country="NL",
+        manufacturer_city="Eindhoven",
+        manufacturer_street="De Zaale",
+        manufacturer_zip_code="5612AZ",
+        year_of_construction=2025,
+        family="Paint",
+        sku="12345678999",
     )
     camera_material_emission = MaterialEmission.objects.create(
         parent_product=camera,
@@ -117,6 +133,14 @@ def populate_db(request):
         name="Display",
         description="Display used in various phones",
         supplier=samsung,
+        manufacturer_name="Red company",
+        manufacturer_country="NL",
+        manufacturer_city="Eindhoven",
+        manufacturer_street="De Zaale",
+        manufacturer_zip_code="5612AZ",
+        year_of_construction=2025,
+        family="Paint",
+        sku="12345678999",
     )
     display_self_estimated_pollution = MaterialEmission.objects.create(
         parent_product=display,
@@ -126,7 +150,15 @@ def populate_db(request):
     iphone = Product.objects.create(
         name="iPhone 17",
         description="Latest iPhone model",
-        supplier=apple
+        supplier=apple,
+        manufacturer_name="Red company",
+        manufacturer_country="NL",
+        manufacturer_city="Eindhoven",
+        manufacturer_street="De Zaale",
+        manufacturer_zip_code="5612AZ",
+        year_of_construction=2025,
+        family="Paint",
+        sku="12345678999",
     )
     iphone_line_processor = ProductBoMLineItem.objects.create(
         parent_product=iphone,
@@ -188,7 +220,7 @@ def populate_db(request):
     )
 
     # Log in as the admin user
-    login(request, admin_user)
+    login(request, admin_user, backend="django.contrib.auth.backends.ModelBackend")
 
     # Redirect to the admin page
     return redirect(reverse("admin:index"))

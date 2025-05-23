@@ -1,15 +1,21 @@
+from io import BytesIO
+
+from django.core.validators import FileExtensionValidator
 from django.http import FileResponse
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, inline_serializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, serializers
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import FileUploadParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
+from core.importers.aas import aas_aasx_to_db, aas_json_to_db, aas_xml_to_db
 from core.models import Product, Company
 from core.models.ai_conversation_log import AIConversationLog
 from core.permissions import ProductPermission
@@ -166,7 +172,7 @@ class ProductViewSet(
     @action(detail=True, methods=["get"],
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/aas_aasx")
-    def aas_aasx(self, request, *args, **kwargs):
+    def export_aas_aasx(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_aas_aasx()
         return FileResponse(
@@ -190,7 +196,7 @@ class ProductViewSet(
     @action(detail=True, methods=["get"],
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/aas_xml")
-    def aas_xml(self, request, *args, **kwargs):
+    def export_aas_xml(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_aas_xml()
         return FileResponse(
@@ -214,7 +220,7 @@ class ProductViewSet(
     @action(detail=True, methods=["get"],
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/aas_json")
-    def aas_json(self, request, *args, **kwargs) -> FileResponse:
+    def export_aas_json(self, request, *args, **kwargs) -> FileResponse:
         product = self.get_object()
         file = product.export_to_aas_json()
         return FileResponse(
@@ -239,7 +245,7 @@ class ProductViewSet(
     @action(detail=True, methods=["get"],
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/scsn_pcf_xml")
-    def scsn_pcf_xml(self, request, *args, **kwargs):
+    def export_scsn_pcf_xml(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_scsn_pcf_xml()
         return FileResponse(
@@ -263,7 +269,7 @@ class ProductViewSet(
     @action(detail=True, methods=["get"],
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/scsn_full_xml")
-    def scsn_full_xml(self, request, *args, **kwargs):
+    def export_scsn_full_xml(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_scsn_full_xml()
         return FileResponse(
@@ -271,6 +277,156 @@ class ProductViewSet(
             as_attachment=True,
             filename=f"{product.name}_scsn_full.xml"
         )
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Create product from AAS AASX file",
+        description=(
+            "Creates a new product from an uploaded AAS AASX file. "
+            "The file should be uploaded as a multipart/form-data request with the key 'file'."
+        ),
+        request={
+            'multipart/form-data': inline_serializer(
+                name='InlineUploadSerializer',
+                fields={
+                    'file': serializers.FileField(),
+                },
+            ),
+        },
+    )
+    @action(detail=False, methods=["post"],
+            parser_classes=[MultiPartParser],
+            permission_classes=[IsAuthenticated, ProductPermission],
+            url_path="import/aas_aasx")
+    def import_aas_aasx(self, request, *args, **kwargs):
+        # Ensure exactly one file was sent
+        if 'file' not in request.FILES or len(request.FILES) != 1:
+            return Response(
+                {"detail": "Please upload exactly one file under the 'file' key."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        uploaded = request.FILES['file']
+
+        # Validate extension
+        validator = FileExtensionValidator(allowed_extensions=['aasx'])
+        try:
+            validator(uploaded)
+        except ValidationError:
+            return Response(
+                {"detail": "Invalid file extension. Only .aasx is allowed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Read into BytesIO
+        file_bytes = uploaded.read()
+        file_io = BytesIO(file_bytes)
+
+        product = aas_aasx_to_db(file_io, self.get_parent_company())
+
+        # Serialize and return the newly created Product
+        serializer = self.get_serializer(product)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Create product from AAS JSON file",
+        description=(
+                "Creates a new product from an uploaded AAS JSON file. "
+                "The file should be uploaded as a multipart/form-data request with the key 'file'."
+        ),
+        request = {
+            'multipart/form-data': inline_serializer(
+                name='InlineUploadSerializer',
+                fields={
+                    'file': serializers.FileField(),
+                },
+            ),
+        },
+    )
+    @action(detail=False, methods=["post"],
+            parser_classes=[MultiPartParser],
+            permission_classes=[IsAuthenticated, ProductPermission],
+            url_path="import/aas_json")
+    def import_aas_json(self, request, *args, **kwargs):
+        # Ensure exactly one file was sent
+        if 'file' not in request.FILES or len(request.FILES) != 1:
+            return Response(
+                {"detail": "Please upload exactly one file under the 'file' key."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        uploaded = request.FILES['file']
+
+        # Validate extension
+        validator = FileExtensionValidator(allowed_extensions=['json'])
+        try:
+            validator(uploaded)
+        except ValidationError:
+            return Response(
+                {"detail": "Invalid file extension. Only .json is allowed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Read into BytesIO
+        file_bytes = uploaded.read()
+        file_io = BytesIO(file_bytes)
+
+        product = aas_json_to_db(file_io, self.get_parent_company())
+
+        # Serialize and return the newly created Product
+        serializer = self.get_serializer(product)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Create product from AAS XML file",
+        description=(
+                "Creates a new product from an uploaded AAS XML file. "
+                "The file should be uploaded as a multipart/form-data request with the key 'file'."
+        ),
+        request={
+            'multipart/form-data': inline_serializer(
+                name='InlineUploadSerializer',
+                fields={
+                    'file': serializers.FileField(),
+                },
+            ),
+        },
+    )
+    @action(detail=False, methods=["post"],
+            parser_classes=[MultiPartParser],
+            permission_classes=[IsAuthenticated, ProductPermission],
+            url_path="import/aas_xml")
+    def import_aas_xml(self, request, *args, **kwargs):
+        # Ensure exactly one file was sent
+        if 'file' not in request.FILES or len(request.FILES) != 1:
+            return Response(
+                {"detail": "Please upload exactly one file under the 'file' key."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        uploaded = request.FILES['file']
+
+        # Validate extension
+        validator = FileExtensionValidator(allowed_extensions=['xml'])
+        try:
+            validator(uploaded)
+        except ValidationError:
+            return Response(
+                {"detail": "Invalid file extension. Only .xml is allowed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Read into BytesIO
+        file_bytes = uploaded.read()
+        file_io = BytesIO(file_bytes)
+
+        product = aas_xml_to_db(file_io, self.get_parent_company())
+
+        # Serialize and return the newly created Product
+        serializer = self.get_serializer(product)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         tags=["Products"],

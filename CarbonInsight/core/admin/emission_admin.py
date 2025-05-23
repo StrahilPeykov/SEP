@@ -3,8 +3,13 @@ from polymorphic.admin import PolymorphicChildModelFilter, PolymorphicParentMode
 from reversion.admin import VersionAdmin
 
 from core.models import Emission, MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission, \
-    EmissionBoMLink
+    EmissionBoMLink, EmissionOverrideFactor
 
+
+class EmissionOverrideFactorInline(admin.TabularInline):
+    model = EmissionOverrideFactor
+    fields = ("lifecycle_stage", "co_2_emission_factor")
+    extra = 0
 
 class EmissionBoMLinkAdminInline(admin.TabularInline):
     model = EmissionBoMLink
@@ -19,7 +24,7 @@ class EmissionAdmin(VersionAdmin, PolymorphicParentModelAdmin):
     child_models = (MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission)
     list_display = ("parent_product", "get_emission_total", "get_emission_trace")
     list_filter = (PolymorphicChildModelFilter,)  # This is optional.
-    inlines = [EmissionBoMLinkAdminInline]
+    inlines = [EmissionBoMLinkAdminInline, EmissionOverrideFactorInline]
 
     def get_emission_total(self, emission:Emission) -> float:
         return emission.get_emission_trace().total
@@ -28,7 +33,7 @@ class EmissionAdmin(VersionAdmin, PolymorphicParentModelAdmin):
 
 class EmissionChildAdmin(PolymorphicChildModelAdmin):
     base_model = Emission  # Optional, explicitly set here.
-    inlines = [EmissionBoMLinkAdminInline]
+    inlines = [EmissionBoMLinkAdminInline, EmissionOverrideFactorInline]
 
     # By using these `base_...` attributes instead of the regular ModelAdmin `form` and `fieldsets`,
     # the additional fields of the child models are automatically added to the admin form.

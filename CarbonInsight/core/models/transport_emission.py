@@ -22,6 +22,7 @@ class TransportEmission(Emission):
         on_delete=models.CASCADE,
         related_name="transport_emissions",
         help_text="Reference values for the transport emission",
+        blank=True, null=True
     )
 
     @property
@@ -29,12 +30,17 @@ class TransportEmission(Emission):
         return self.weight * self.distance
 
     def _get_emission_trace(self) -> EmissionTrace:
-        reference_emission_trace = self.reference.get_emission_trace()
-
-        # Multiply by the factor
-        reference_multiplied_factor = reference_emission_trace * self.tkm
-        reference_multiplied_factor.label = f"Transport emission"
-        reference_multiplied_factor.methodology = f"{self.weight}kg * {self.distance}km * {self.reference.name}"
+        if self.reference is None:
+            reference_multiplied_factor = EmissionTrace(
+                label="Transport emission",
+                reference_impact_unit=ReferenceImpactUnit.KILOWATT_HOUR,
+                related_object=self,
+            )
+        else:
+            # Multiply by the factor
+            reference_multiplied_factor = self.reference.get_emission_trace() * self.tkm
+            reference_multiplied_factor.label = f"Transport emission"
+            reference_multiplied_factor.methodology = f"{self.weight}kg * {self.distance}km * {self.reference.name}"
 
         return reference_multiplied_factor
 

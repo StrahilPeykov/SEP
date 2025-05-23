@@ -4,8 +4,6 @@ from enum import Enum
 from numbers import Number
 from typing import Optional, List, Dict, Tuple, Set, Literal, Union, TYPE_CHECKING, Any
 
-from core.serializers.null_serializer import NullSerializer
-
 from core.models.lifecycle_stage import LifecycleStage
 from core.models.pcf_calculation_method import PcfCalculationMethod
 from core.models.reference_impact_unit import ReferenceImpactUnit
@@ -45,7 +43,7 @@ class EmissionTraceChild:
 class EmissionTrace:
     label: str
     reference_impact_unit: ReferenceImpactUnit
-    related_object: Any = field(metadata={'serializer_field': NullSerializer()}, default=None)
+    related_object: Any = None
     methodology: Optional[str] = None
     pcf_calculation_method: PcfCalculationMethod = PcfCalculationMethod.ISO_14040_ISO_14044
     # This contains the emissions up to this stage

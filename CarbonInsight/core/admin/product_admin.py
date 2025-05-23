@@ -3,8 +3,13 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from reversion.admin import VersionAdmin
 
 from core.models import Product, ProductSharingRequest, ProductBoMLineItem, Emission
+from core.models.product import ProductEmissionOverrideFactor
 
 
+class ProductEmissionOverrideFactorInline(admin.TabularInline):
+    model = ProductEmissionOverrideFactor
+    fields = ("lifecycle_stage", "co_2_emission_factor")
+    extra = 0
 
 class ProductBoMLineItemInline(admin.TabularInline):
     model = ProductBoMLineItem
@@ -47,7 +52,8 @@ class ProductAdmin(VersionAdmin):
         ("supplier", RelatedDropdownFilter),
         ("is_public", admin.BooleanFieldListFilter),
     )
-    inlines = [ProductSharingRequestInline, ProductBoMLineItemInline, ProductBoMLineItemUsedInInline]
+    inlines = [ProductSharingRequestInline, ProductBoMLineItemInline,
+               ProductBoMLineItemUsedInInline, ProductEmissionOverrideFactorInline]
 
     def get_emission_total(self, product:Product) -> float:
         return product.get_emission_trace().total

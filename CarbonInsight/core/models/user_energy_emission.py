@@ -18,10 +18,18 @@ class UserEnergyEmission(Emission):
         on_delete=models.CASCADE,
         related_name="user_emissions",
         help_text="Reference values for the user energy emission",
+        blank=True, null=True
     )
 
     def _get_emission_trace(self) -> EmissionTrace:
-        reference_emission_trace = self.reference.get_emission_trace()
+        if self.reference is None:
+            reference_emission_trace = EmissionTrace(
+                label="User energy consumption emission",
+                reference_impact_unit=ReferenceImpactUnit.KILOWATT_HOUR,
+                related_object=self,
+            )
+        else:
+            reference_emission_trace = self.reference.get_emission_trace()
 
         # Multiply by the factor
         reference_multiplied_factor = reference_emission_trace * self.energy_consumption

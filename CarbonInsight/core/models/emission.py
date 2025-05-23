@@ -4,6 +4,7 @@ from polymorphic.models import PolymorphicModel
 from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
 from .lifecycle_stage import LifecycleStage
 from .pcf_calculation_method import PcfCalculationMethod
+from .reference_impact_unit import ReferenceImpactUnit
 
 
 class Emission(PolymorphicModel):

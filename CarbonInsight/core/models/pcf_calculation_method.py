@@ -102,3 +102,13 @@ class PcfCalculationMethod(models.TextChoices):
                 return "0173-1#07-ACC019#001"
             case _:
                 return "Other"
+
+    @staticmethod
+    def from_aas_value_id(aas_value_id: str) -> "PcfCalculationMethod":
+        """
+        Converts an AAS value ID to a PcfCalculationMethod value.
+        """
+        for stage in PcfCalculationMethod:
+            if stage.get_aas_value_id() == aas_value_id:
+                return stage
+        return PcfCalculationMethod.OTHER

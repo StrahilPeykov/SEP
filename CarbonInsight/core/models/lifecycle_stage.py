@@ -129,3 +129,13 @@ class LifecycleStage(models.TextChoices):
                 return "0173-1#07-ABU214#003"
             case _:
                 return "Other"
+
+    @staticmethod
+    def from_aas_value_id(aas_value_id: str) -> "LifecycleStage":
+        """
+        Converts an AAS value ID to a LifecycleStage value.
+        """
+        for stage in LifecycleStage:
+            if stage.get_aas_value_id() == aas_value_id:
+                return stage
+        return LifecycleStage.OTHER

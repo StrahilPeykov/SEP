@@ -3,7 +3,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from core.models import CompanyMembership, Product, ProductBoMLineItem, \
-    ProductionEnergyEmissionReference, EmissionBoMLink, ProductionEnergyEmission
+    ProductionEnergyEmissionReference, EmissionBoMLink, ProductionEnergyEmission, UserEnergyEmissionReference, \
+    UserEnergyEmission, MaterialEmissionReference, MaterialEmissionReferenceFactor, LifecycleStage, MaterialEmission
 from core.models.company import Company
 
 User = get_user_model()
@@ -173,6 +174,126 @@ class ProductAPITest(APITestCase):
 
         self.production_energy_ref = ProductionEnergyEmissionReference.objects.create(
             common_name="Test Production Energy Ref")
+
+        self.user_energy_ref = UserEnergyEmissionReference.objects.create(common_name="Test User Energy Ref")
+
+        self.mat_ref_plastic_bom = MaterialEmissionReference.objects.create(
+            common_name="Plastic for BOM"
+        )
+
+    def test_material_emission_linked_to_same_product_not_in_bom(self):
+        material_emission_parent = MaterialEmission.objects.create(
+            parent_product=self.product_for_emission_linking_parent,
+            weight=1.5,
+            reference=self.mat_ref_plastic_bom,
+        )
+
+        bom_url = reverse(
+            "product-bom-list",
+            args=[self.red_company.id, self.product_for_emission_linking_parent.id]
+        )
+        bom_response = self.client.get(bom_url)
+        self.assertEqual(bom_response.status_code, status.HTTP_200_OK)
+
+        found_emission_in_bom = False
+        for item in bom_response.data:
+            emissions = item.get('emissions', [])
+            for emission in emissions:
+                if emission.get('type') == "MaterialEmission" and emission.get('id') == material_emission_parent.id:
+                    found_emission_in_bom = True
+                    break
+            if found_emission_in_bom:
+                break
+        self.assertFalse(found_emission_in_bom,
+                         "MaterialEmission linked directly to the parent product should not be in BOM line items.")
+
+    def test_material_emission_linked_to_other_product_bom_item_detail(self):
+        bom_item_other = ProductBoMLineItem.objects.create(
+            parent_product=self.red_paint,
+            line_item_product=self.blue_paint,
+            quantity=1
+        )
+
+        material_emission_other_product = MaterialEmission.objects.create(
+            parent_product=self.purple_paint,
+            weight=7.5,
+            reference=self.mat_ref_plastic_bom,
+        )
+
+        EmissionBoMLink.objects.create(
+            emission=material_emission_other_product,
+            line_item=bom_item_other
+        )
+
+        url = reverse(
+            "product-material-emissions-detail",
+            args=[self.red_company.id, self.purple_paint.id, material_emission_other_product.id]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('line_items', response.data)
+        self.assertIsInstance(response.data['line_items'], list)
+        self.assertIn(bom_item_other.id, response.data['line_items'],
+                      f"BOM item ID {bom_item_other.id} unexpectedly not found in material emission's line_items: {response.data['line_items']}.")
+
+    def test_user_energy_emission_linked_to_other_product_bom_item_id(self):
+        bom_item_other = ProductBoMLineItem.objects.create(
+            parent_product=self.red_paint,
+            line_item_product=self.blue_paint,
+            quantity=1
+        )
+
+        user_emission_other_product = UserEnergyEmission.objects.create(
+            parent_product=self.purple_paint,
+            energy_consumption=15.0,
+            reference=self.user_energy_ref
+        )
+
+        EmissionBoMLink.objects.create(
+            emission=user_emission_other_product,
+            line_item=bom_item_other
+        )
+
+        url = reverse(
+            "product-user-energy-emissions-detail",
+            args=[self.red_company.id, self.purple_paint.id, user_emission_other_product.id]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('line_items', response.data)
+        self.assertIsInstance(response.data['line_items'], list)
+        self.assertIn(bom_item_other.id, response.data['line_items'],
+                         f"BOM item ID {bom_item_other.id} unexpectedly not found in user emission's line_items: {response.data['line_items']}.")
+
+    def test_user_energy_emission_linked_to_same_product_bom_item_id(self):
+
+        bom_item = ProductBoMLineItem.objects.create(
+            parent_product=self.product_for_emission_linking_parent,
+            line_item_product=self.product_for_emission_linking_child,
+            quantity=1
+        )
+
+        user_emission = UserEnergyEmission.objects.create(
+            parent_product=self.product_for_emission_linking_child,
+            energy_consumption=10.0,
+            reference=self.user_energy_ref
+        )
+
+        EmissionBoMLink.objects.create(
+            emission=user_emission,
+            line_item=bom_item
+        )
+
+        url = reverse(
+            "product-user-energy-emissions-detail",
+            args=[self.red_company.id, self.product_for_emission_linking_child.id, user_emission.id]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('line_items', response.data)
+        self.assertIsInstance(response.data['line_items'], list)
+        self.assertIn(bom_item.id, response.data['line_items'],
+                      f"BOM item ID {bom_item.id} not in user emission's line_items.")
 
     def test_production_energy_emission_linked_to_same_product_bom_item_id(self):
 
