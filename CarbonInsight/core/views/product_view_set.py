@@ -5,6 +5,7 @@ from django.http import FileResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from import_export.results import RowResult
 from rest_framework import viewsets, status, serializers
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
@@ -14,11 +15,13 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FileUploadParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
+from tablib import Dataset
 
 from core.importers.aas import aas_aasx_to_db, aas_json_to_db, aas_xml_to_db
 from core.models import Product, Company
 from core.models.ai_conversation_log import AIConversationLog
 from core.permissions import ProductPermission
+from core.resources.product_resource import ProductResource
 from core.serializers.ai_conversation_log_serializer import AIConversationLogSerializer
 from core.serializers.emission_trace_serializer import EmissionTraceSerializer
 from core.serializers.product_serializer import ProductSerializer
@@ -178,7 +181,8 @@ class ProductViewSet(
         return FileResponse(
             file,
             as_attachment=True,
-            filename=f"{product.name}_aas.aasx"
+            filename=f"{product.name}_aas.aasx",
+            content_type="application/asset-administration-shell-package",
         )
 
     @extend_schema(
@@ -202,7 +206,8 @@ class ProductViewSet(
         return FileResponse(
             file,
             as_attachment=True,
-            filename=f"{product.name}_aas.xml"
+            filename=f"{product.name}_aas.xml",
+            content_type="application/xml",
         )
 
     @extend_schema(
@@ -226,7 +231,8 @@ class ProductViewSet(
         return FileResponse(
             file,
             as_attachment=True,
-            filename=f"{product.name}_aas.json"
+            filename=f"{product.name}_aas.json",
+            content_type="application/json",
         )
 
     @extend_schema(
@@ -251,7 +257,8 @@ class ProductViewSet(
         return FileResponse(
             file,
             as_attachment=True,
-            filename=f"{product.name}_scsn_pcf.xml"
+            filename=f"{product.name}_scsn_pcf.xml",
+            content_type="application/xml",
         )
 
     @extend_schema(
@@ -275,7 +282,8 @@ class ProductViewSet(
         return FileResponse(
             file,
             as_attachment=True,
-            filename=f"{product.name}_scsn_full.xml"
+            filename=f"{product.name}_scsn_full.xml",
+            content_type="application/xml",
         )
 
     @extend_schema(
@@ -285,14 +293,10 @@ class ProductViewSet(
             "Creates a new product from an uploaded AAS AASX file. "
             "The file should be uploaded as a multipart/form-data request with the key 'file'."
         ),
-        request={
-            'multipart/form-data': inline_serializer(
-                name='InlineUploadSerializer',
-                fields={
-                    'file': serializers.FileField(),
-                },
-            ),
-        },
+        request=inline_serializer(
+            name="InlineUploadAASAASXSerializer",
+            fields={"file": serializers.FileField()},
+        ),
     )
     @action(detail=False, methods=["post"],
             parser_classes=[MultiPartParser],
@@ -335,14 +339,10 @@ class ProductViewSet(
                 "Creates a new product from an uploaded AAS JSON file. "
                 "The file should be uploaded as a multipart/form-data request with the key 'file'."
         ),
-        request = {
-            'multipart/form-data': inline_serializer(
-                name='InlineUploadSerializer',
-                fields={
-                    'file': serializers.FileField(),
-                },
-            ),
-        },
+        request = inline_serializer(
+            name="InlineUploadAASJSONSerializer",
+            fields={"file": serializers.FileField()},
+        ),
     )
     @action(detail=False, methods=["post"],
             parser_classes=[MultiPartParser],
@@ -385,14 +385,10 @@ class ProductViewSet(
                 "Creates a new product from an uploaded AAS XML file. "
                 "The file should be uploaded as a multipart/form-data request with the key 'file'."
         ),
-        request={
-            'multipart/form-data': inline_serializer(
-                name='InlineUploadSerializer',
-                fields={
-                    'file': serializers.FileField(),
-                },
-            ),
-        },
+        request=inline_serializer(
+            name="InlineUploadAASXMLSerializer",
+            fields={"file": serializers.FileField()},
+        ),
     )
     @action(detail=False, methods=["post"],
             parser_classes=[MultiPartParser],
@@ -427,6 +423,139 @@ class ProductViewSet(
         # Serialize and return the newly created Product
         serializer = self.get_serializer(product)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Export product to CSV",
+        description=(
+            "Export all this company's products to CSV format. "
+            "The CSV file will be returned as a downloadable attachment."
+        ),
+        responses={
+            (200, 'text/csv'): OpenApiTypes.STR,
+        }
+    )
+    @action(detail=False, methods=["get"],
+            permission_classes=[IsAuthenticated, ProductPermission],
+            url_path="export/csv")
+    def export_csv(self, request, *args, **kwargs):
+        dataset = ProductResource().export(queryset=self.get_queryset())
+        csv_bytes = dataset.csv.encode("utf-8")
+        file_io = BytesIO(csv_bytes)
+
+        return FileResponse(
+            file_io,
+            as_attachment=True,
+            filename=f"{self.get_parent_company().name}_products.csv",
+            content_type="text/csv",
+        )
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Export product to XLSX",
+        description=(
+                "Export all this company's products to XLSX format. "
+                "The XLSX file will be returned as a downloadable attachment."
+        ),
+        responses={
+            (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
+        }
+    )
+    @action(detail=False, methods=["get"],
+            permission_classes=[IsAuthenticated, ProductPermission],
+            url_path="export/xlsx")
+    def export_xlsx(self, request, *args, **kwargs):
+        dataset = ProductResource().export(queryset=self.get_queryset())
+        result = dataset.export(format="xlsx")
+        file_io = BytesIO(result)
+
+        return FileResponse(
+            file_io,
+            as_attachment=True,
+            filename=f"{self.get_parent_company().name}_products.xlsx",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Import products from tabular file",
+        description=(
+                "Import products from a CSV, XLS or XLSX file. "
+                "The file should be uploaded as a multipart/form-data request with the key 'file'."
+        ),
+        request=inline_serializer(
+            name="InlineUploadFileSerializer",
+            fields={"file": serializers.FileField()},
+        ),
+        responses={201: ProductSerializer(many=True)},
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        parser_classes=[MultiPartParser],
+        permission_classes=[IsAuthenticated, ProductPermission],
+        url_path="import/tabular",
+        filter_backends=[]
+    )
+    def import_tabular(self, request, *args, **kwargs):
+        if 'file' not in request.FILES or len(request.FILES) != 1:
+            return Response(
+                {"detail": "Please upload exactly one file under the 'file' key."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        uploaded = request.FILES['file']
+
+        # Validate extension
+        allowed = ['csv', 'xls', 'xlsx']
+        validator = FileExtensionValidator(allowed_extensions=allowed)
+        try:
+            validator(uploaded)
+        except ValidationError:
+            return Response(
+                {"detail": f"Invalid file extension. Only {', '.join(allowed)} are allowed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Read raw bytes and determine format
+        name = uploaded.name
+        ext = name.rsplit(".", 1)[1].lower()
+        raw = uploaded.read()
+
+        # Load into a Tablib Dataset
+        if ext == 'csv':
+            text = raw.decode('utf-8')
+            dataset = Dataset().load(text, format='csv')
+        else:
+            fmt = 'xls' if ext == 'xls' else 'xlsx'
+            dataset = Dataset().load(raw, format=fmt)
+
+        # Perform import
+        resource = ProductResource()
+        result = resource.import_data(
+            dataset,
+            dry_run=False,
+            supplier=self.get_parent_company(),
+            retain_instance_in_row_result=True
+        )
+
+        # Success: serialize newly created products
+        if not result.has_errors():
+            created = []
+            for row in result.rows:
+                if row.import_type == RowResult.IMPORT_TYPE_NEW:
+                    created.append(self.get_serializer(row.instance).data)
+            return Response(created, status=status.HTTP_201_CREATED)
+
+        # Failure: collect errors
+        errors = []
+        for err_row in result.error_rows:
+            for err in err_row.errors:
+                errors.append({
+                    "row": err.row,
+                    "error": repr(err.error),
+                })
+        return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         tags=["Products"],

@@ -1,12 +1,16 @@
-from rest_framework import viewsets, permissions
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-from rest_framework.generics import get_object_or_404
+from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 
-from core.models import Company, Product
 from core.models.transport_emission import TransportEmission
-from core.permissions import ProductSubAPIPermission
+from core.permissions import ProductSubAPIPermission, ProductPermission
+from core.resources.emission_resources import TransportEmissionResource
 from core.serializers.emission_serializers import TransportEmissionSerializer
 from core.views.mixins.company_mixin import CompanyMixin
+from core.views.mixins.emission_import_export_mixin import EmissionImportExportMixin, T
 from core.views.mixins.product_mixin import ProductMixin
 
 
@@ -57,15 +61,44 @@ from core.views.mixins.product_mixin import ProductMixin
         summary="Delete a transport emission",
         description="Delete a specific transport emission by its ID."
     ),
+    export_csv=extend_schema(
+        tags=["Emissions/Transport"],
+        summary="Export transport emissions to CSV",
+        description=(
+                "Export all this product's transport emissions to CSV format. "
+                "The CSV file will be returned as a downloadable attachment."
+        ),
+        responses={
+            (200, 'text/csv'): OpenApiTypes.STR,
+        }
+    ),
+    export_xlsx=extend_schema(
+        tags=["Emissions/Transport"],
+        summary="Export transport emissions to XLSX",
+        description=(
+                "Export all this product's transport emissions to XLSX format. "
+                "The CSV file will be returned as a downloadable attachment."
+        ),
+        responses={
+            (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
+        }
+    ),
+    import_tabular=extend_schema(
+        tags=["Emissions/Transport"],
+        summary="Import transport emissions",
+        description="Import transport emissions from a tabular file."
+    ),
 )
 class TransportEmissionViewSet(
     CompanyMixin,
     ProductMixin,
+    EmissionImportExportMixin,
     viewsets.ModelViewSet
 ):
     queryset = TransportEmission.objects.all()
     serializer_class = TransportEmissionSerializer
     permission_classes = [permissions.IsAuthenticated, ProductSubAPIPermission]
+    emission_import_export_resource = TransportEmissionResource
 
     def get_queryset(self):
         product = self.get_parent_product()

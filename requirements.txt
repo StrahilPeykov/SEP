@@ -18,3 +18,5 @@ lxml<5  # Intentionally old because of basyx-python-sdk
 drf_standardized_errors~=0.14.1
 drf-standardized-errors[openapi]~=0.14.1
 aas-test-engines~=1.0.2
+django-import-export[all]~=4.3.7
+rapidfuzz~=3.13.0

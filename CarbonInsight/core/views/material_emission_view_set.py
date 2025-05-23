@@ -1,3 +1,4 @@
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import viewsets, permissions
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework.generics import get_object_or_404
@@ -5,8 +6,10 @@ from rest_framework.generics import get_object_or_404
 from core.models import Company, Product
 from core.models.material_emission import MaterialEmission
 from core.permissions import ProductSubAPIPermission
+from core.resources.emission_resources import MaterialEmissionResource
 from core.serializers.emission_serializers import MaterialEmissionSerializer
 from core.views.mixins.company_mixin import CompanyMixin
+from core.views.mixins.emission_import_export_mixin import EmissionImportExportMixin
 from core.views.mixins.product_mixin import ProductMixin
 
 
@@ -57,15 +60,44 @@ from core.views.mixins.product_mixin import ProductMixin
         summary="Delete a material emission",
         description="Delete a specific material emission by its ID."
     ),
+    export_csv=extend_schema(
+        tags=["Emissions/Material"],
+        summary="Export material emissions to CSV",
+        description=(
+                "Export all this product's material emissions to CSV format. "
+                "The CSV file will be returned as a downloadable attachment."
+        ),
+        responses={
+            (200, 'text/csv'): OpenApiTypes.STR,
+        }
+    ),
+    export_xlsx=extend_schema(
+        tags=["Emissions/Material"],
+        summary="Export material emissions to XLSX",
+        description=(
+                "Export all this product's material emissions to XLSX format. "
+                "The CSV file will be returned as a downloadable attachment."
+        ),
+        responses={
+            (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
+        }
+    ),
+    import_tabular=extend_schema(
+        tags=["Emissions/Material"],
+        summary="Import material emissions",
+        description="Import material emissions from a tabular file."
+    ),
 )
 class MaterialEmissionViewSet(
     CompanyMixin,
     ProductMixin,
+    EmissionImportExportMixin,
     viewsets.ModelViewSet
 ):
     queryset = MaterialEmission.objects.all()
     serializer_class = MaterialEmissionSerializer
     permission_classes = [permissions.IsAuthenticated, ProductSubAPIPermission]
+    emission_import_export_resource = MaterialEmissionResource
 
     def get_queryset(self):
         product = self.get_parent_product()
