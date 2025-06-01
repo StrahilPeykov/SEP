@@ -3,22 +3,13 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 
+from core.tests.setup_functions import paint_companies_setup
+
 User = get_user_model()
 
 class ChangePasswordAPITest(APITestCase):
     def setUp(self):
-        # Create a users
-        self.user1 = User.objects.create_user(username="1@company.com", email="1@company.com",
-                                                            password="1234567890")
-
-        # Obtain JWT for user1
-        url = reverse("token_obtain_pair")
-        resp = self.client.post(
-            url, {"username": "1@company.com", "password": "1234567890"}, format="json"
-        )
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.access_token = resp.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        paint_companies_setup(self)
 
     def test_change_password_bad_old_password(self):
         url = reverse("change_password")
@@ -73,11 +64,11 @@ class ChangePasswordAPITest(APITestCase):
         )
 
         login_old = self.client.post(
-            url2, {"username": "1@company.com", "password": "1234567890"}, format="json"
+            url2, {"username": "1@redcompany.com", "password": "1234567890"}, format="json"
         )
 
         login_new = self.client.post(
-            url2, {"username": "1@company.com", "password": "Ilov3_carb0ninsight"}, format="json"
+            url2, {"username": "1@redcompany.com", "password": "Ilov3_carb0ninsight"}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

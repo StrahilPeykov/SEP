@@ -4,8 +4,6 @@ from enum import Enum
 from numbers import Number
 from typing import Optional, List, Dict, Tuple, Set, Literal, Union, TYPE_CHECKING, Any
 
-from core.serializers.null_serializer import NullSerializer
-
 from core.models.lifecycle_stage import LifecycleStage
 from core.models.pcf_calculation_method import PcfCalculationMethod
 from core.models.reference_impact_unit import ReferenceImpactUnit
@@ -42,14 +40,39 @@ class EmissionTraceChild:
         return hash((self.emission_trace, self.quantity))
 
 @dataclass
+class EmissionSplit:
+    """Hold both biogenic and non-biogenic in one place."""
+    biogenic: float = 0.0
+    non_biogenic: float = 0.0
+
+    def __add__(self, other: "EmissionSplit") -> "EmissionSplit":
+        return EmissionSplit(
+            biogenic=self.biogenic + other.biogenic,
+            non_biogenic=self.non_biogenic + other.non_biogenic,
+        )
+
+    def __mul__(self, factor: float) -> "EmissionSplit":
+        return EmissionSplit(
+            biogenic=self.biogenic * factor,
+            non_biogenic=self.non_biogenic * factor,
+        )
+
+    def __hash__(self):
+        return hash((self.biogenic, self.non_biogenic))
+
+    @property
+    def total(self) -> float:
+        return self.biogenic + self.non_biogenic
+
+@dataclass
 class EmissionTrace:
     label: str
     reference_impact_unit: ReferenceImpactUnit
-    related_object: Any = field(metadata={'serializer_field': NullSerializer()}, default=None)
+    related_object: Any = None
     methodology: Optional[str] = None
     pcf_calculation_method: PcfCalculationMethod = PcfCalculationMethod.ISO_14040_ISO_14044
     # This contains the emissions up to this stage
-    emissions_subtotal: Dict[LifecycleStage, float] = field(default_factory=dict)
+    emissions_subtotal: Dict[LifecycleStage, EmissionSplit] = field(default_factory=dict)
     # key = LifecycleStage; value = quantity
     children: Set[EmissionTraceChild] = field(default_factory=set)
     mentions: List[EmissionTraceMention] = field(default_factory=list)
@@ -97,7 +120,8 @@ class EmissionTrace:
         et.label = f"{self.label} * {quantity}"
         et.methodology = f"({self.methodology}) * {quantity}" if self.methodology else None
         et.emissions_subtotal = {
-            lifecycle_stage: value * quantity for lifecycle_stage, value in self.emissions_subtotal.items()
+            stage: split * quantity
+            for stage, split in self.emissions_subtotal.items()
         }
         et.children.clear()
         et.children.add(
@@ -117,9 +141,17 @@ class EmissionTrace:
                 else:
                     self.emissions_subtotal[lifecycle_stage] = value * child.quantity
 
-    def __float__(self):
-        return float(sum(self.emissions_subtotal.values()))
+    def __float__(self) -> float:
+        return self.total
+
+    @property
+    def total_biogenic(self) -> float:
+        return round(sum(split.biogenic for split in self.emissions_subtotal.values()), 2)
+
+    @property
+    def total_non_biogenic(self) -> float:
+        return round(sum(split.non_biogenic for split in self.emissions_subtotal.values()), 2)
 
     @property
     def total(self) -> float:
-        return round(float(self), 2)
+        return round(sum(split.total for split in self.emissions_subtotal.values()), 2)

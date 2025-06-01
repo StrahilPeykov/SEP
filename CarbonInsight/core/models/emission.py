@@ -1,7 +1,7 @@
 from django.db import models
 from polymorphic.models import PolymorphicModel
 
-from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionSplit
 from .lifecycle_stage import LifecycleStage
 from .pcf_calculation_method import PcfCalculationMethod
 from .reference_impact_unit import ReferenceImpactUnit
@@ -45,7 +45,10 @@ class Emission(PolymorphicModel):
                 message = "Emission factors are overridden by user-provided values"
             ))
             for factor in self.override_factors.all():
-                emission_trace.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = factor.co_2_emission_factor
+                emission_trace.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = EmissionSplit(
+                    biogenic=factor.co_2_emission_factor_biogenic,
+                    non_biogenic=factor.co_2_emission_factor_non_biogenic
+                )
 
         for line_item in self.line_items.all():
             emission_trace.mentions.append(EmissionTraceMention(
@@ -73,4 +76,5 @@ class EmissionOverrideFactor(models.Model):
         choices=LifecycleStage.choices,
         default=LifecycleStage.OTHER,
     )
-    co_2_emission_factor = models.FloatField()
+    co_2_emission_factor_biogenic = models.FloatField(default=0.0)
+    co_2_emission_factor_non_biogenic = models.FloatField(default=0.0)

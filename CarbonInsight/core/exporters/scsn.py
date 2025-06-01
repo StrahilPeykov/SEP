@@ -102,7 +102,7 @@ def product_to_scsn_xml_tree(product: 'Product', include_filler_data:bool = True
     unitary_product_amount.text = str(1)
 
     pcf_excluding_biogenic = etree.SubElement(carbon_footprint, f"{{{nsmap['cac']}}}PCFexcludingBiogenic")
-    pcf_excluding_biogenic.text = str(emission_trace.total) # TODO: Update later to split non biogenic and biogenic
+    pcf_excluding_biogenic.text = str(emission_trace.total_non_biogenic)
 
     product_carbon_footprint_calculation = etree.SubElement(product_carbon_footprint, f"{{{nsmap['cac']}}}ProductCarbonFootprintCalculation")
 
@@ -134,7 +134,7 @@ def product_to_scsn_xml_tree(product: 'Product', include_filler_data:bool = True
             description = etree.SubElement(external_reference, f"{{{nsmap['cbc']}}}Description")
             description.text = etc.label
             pcf_excluding_biogenic = etree.SubElement(bom_reference, f"{{{nsmap['cac']}}}PCFexcludingBiogenic")
-            pcf_excluding_biogenic.text = str(etc.total)
+            pcf_excluding_biogenic.text = str(etc.total_non_biogenic)
         else:
             pcf_process = etree.SubElement(product_carbon_footprint_calculation, f"{{{nsmap['cac']}}}PCFProcess")
             boundary_process_description = etree.SubElement(pcf_process, f"{{{nsmap['cac']}}}BoundaryProcessDescription")
@@ -142,7 +142,7 @@ def product_to_scsn_xml_tree(product: 'Product', include_filler_data:bool = True
             if etc.methodology is not None:
                 boundary_process_description.text += " - " + etc.methodology
             pcf_excluding_biogenic = etree.SubElement(pcf_process, f"{{{nsmap['cac']}}}PCFexcludingBiogenic")
-            pcf_excluding_biogenic.text = str(etc.total)
+            pcf_excluding_biogenic.text = str(etc.total_non_biogenic)
             pcf_calculation_method = etree.SubElement(pcf_process, f"{{{nsmap['cac']}}}PCFCalculationMethod")
             pcf_calculation_method.text = etc.pcf_calculation_method.get_aas_value()
             explanatory_statement = etree.SubElement(pcf_process, f"{{{nsmap['cac']}}}ExplanatoryStatement")

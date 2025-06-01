@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import Q
 
 from .emission import Emission
-from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionSplit
 from .lifecycle_stage import LifecycleStage
 from .reference_impact_unit import ReferenceImpactUnit
 
@@ -74,7 +74,10 @@ class ProductionEnergyEmissionReference(models.Model):
         )
         # Go through all factors and add them to the root
         for factor in self.reference_factors.all():
-            root.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = factor.co_2_emission_factor
+            root.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = EmissionSplit(
+                biogenic=factor.co_2_emission_factor_biogenic,
+                non_biogenic=factor.co_2_emission_factor_non_biogenic
+            )
         root.mentions.append(EmissionTraceMention(
             mention_class=EmissionTraceMentionClass.INFORMATION,
             message="Estimated values"
@@ -96,7 +99,8 @@ class ProductionEnergyEmissionReferenceFactor(models.Model):
         choices=LifecycleStage.choices,
         default=LifecycleStage.OTHER,
     )
-    co_2_emission_factor = models.FloatField()
+    co_2_emission_factor_biogenic = models.FloatField(default=0.0)
+    co_2_emission_factor_non_biogenic = models.FloatField(default=0.0)
 
     class Meta:
         verbose_name = "Production energy emission reference factor"

@@ -8,7 +8,7 @@ from core.models import Emission, MaterialEmission, ProductionEnergyEmission, Tr
 
 class EmissionOverrideFactorInline(admin.TabularInline):
     model = EmissionOverrideFactor
-    fields = ("lifecycle_stage", "co_2_emission_factor")
+    fields = ("lifecycle_stage", "co_2_emission_factor_biogenic", "co_2_emission_factor_non_biogenic")
     extra = 0
 
 class EmissionBoMLinkAdminInline(admin.TabularInline):
@@ -22,13 +22,22 @@ class EmissionBoMLinkAdminInline(admin.TabularInline):
 class EmissionAdmin(VersionAdmin, PolymorphicParentModelAdmin):
     base_model = Emission  # Optional, explicitly set here.
     child_models = (MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission)
-    list_display = ("parent_product", "get_emission_total", "get_emission_trace")
+    list_display = ("parent_product", "get_emission_total", "get_emission_total_biogenic",
+                    "get_emission_total_non_biogenic", "pcf_calculation_method")
     list_filter = (PolymorphicChildModelFilter,)  # This is optional.
     inlines = [EmissionBoMLinkAdminInline, EmissionOverrideFactorInline]
 
     def get_emission_total(self, emission:Emission) -> float:
         return emission.get_emission_trace().total
     get_emission_total.short_description = "Total emissions"
+
+    def get_emission_total_non_biogenic(self, emission:Emission) -> float:
+        return emission.get_emission_trace().total_non_biogenic
+    get_emission_total_non_biogenic.short_description = "Total non-biogenic emissions"
+
+    def get_emission_total_biogenic(self, emission:Emission) -> float:
+        return emission.get_emission_trace().total_biogenic
+    get_emission_total_biogenic.short_description = "Total biogenic emissions"
 
 
 class EmissionChildAdmin(PolymorphicChildModelAdmin):
@@ -41,6 +50,14 @@ class EmissionChildAdmin(PolymorphicChildModelAdmin):
     def get_emission_total(self, emission:Emission) -> float:
         return emission.get_emission_trace().total
     get_emission_total.short_description = "Total emissions"
+
+    def get_emission_total_non_biogenic(self, emission:Emission) -> float:
+        return emission.get_emission_trace().total_non_biogenic
+    get_emission_total_non_biogenic.short_description = "Total non-biogenic emissions"
+
+    def get_emission_total_biogenic(self, emission:Emission) -> float:
+        return emission.get_emission_trace().total_biogenic
+    get_emission_total_biogenic.short_description = "Total biogenic emissions"
 
 @admin.register(MaterialEmission)
 class MaterialEmissionAdmin(VersionAdmin, EmissionChildAdmin):

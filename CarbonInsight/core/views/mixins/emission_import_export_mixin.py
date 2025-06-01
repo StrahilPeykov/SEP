@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from import_export.results import RowResult
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -60,10 +60,7 @@ class EmissionImportExportMixin:
     )
     def import_tabular(self:T, request, *args, **kwargs):
         if 'file' not in request.FILES or len(request.FILES) != 1:
-            return Response(
-                {"detail": "Please upload exactly one file under the 'file' key."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
 
         uploaded = request.FILES['file']
 
@@ -73,10 +70,7 @@ class EmissionImportExportMixin:
         try:
             validator(uploaded)
         except ValidationError:
-            return Response(
-                {"detail": f"Invalid file extension. Only {', '.join(allowed)} are allowed."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise UnsupportedMediaType("Invalid file extension. Only .csv, .xls, .xlsx are allowed.")
 
         # Read raw bytes and determine format
         name = uploaded.name
@@ -116,4 +110,4 @@ class EmissionImportExportMixin:
                     "row": err.row,
                     "error": repr(err.error),
                 })
-        return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+        raise ValidationError(errors)

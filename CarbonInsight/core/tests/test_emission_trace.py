@@ -9,122 +9,47 @@ from core.models.company import Company
 from core.models.emission_trace import EmissionTrace, EmissionTraceMentionClass
 from core.models.lifecycle_stage import LifecycleStage
 from core.models.product import ProductEmissionOverrideFactor
+from core.tests.setup_functions import tech_companies_setup
 
 
 class EmissionTraceTestCase(APITestCase):
     def setUp(self):
-        admin_user = User.objects.create_user(username="admin@example.com", email="admin@example.com",
-                                              password="1234567890")
-        admin_user.is_superuser = True
-        admin_user.is_staff = True
-        admin_user.save()
-        apple_user_1 = User.objects.create_user(username="apple1@apple.com", email="apple1@apple.com",
-                                                password="1234567890")
-        apple_user_2 = User.objects.create_user(username="apple2@apple.com", email="apple2@apple.com",
-                                                password="1234567890")
-        samsung_user_1 = User.objects.create_user(username="samsung1@samsung.com", email="samsung1@samsung.com",
-                                                  password="1234567890")
-        corning_user_1 = User.objects.create_user(username="corning1@corning.com", email="corning1@corning.com",
-                                                  password="1234567890")
-        tsmc_user_1 = User.objects.create_user(username="tsmc1@tsmc.com", email="tsmc1@tsmc.com", password="1234567890")
+        tech_companies_setup(self)
 
-        # Create test companies
-        apple = Company.objects.create(
-            name="Apple Inc.",
-            vat_number="TEST123456",
-            business_registration_number="REG123456"
-        )
-        samsung = Company.objects.create(
-            name="Samsung Electronics",
-            vat_number="TEST654321",
-            business_registration_number="REG654321"
-        )
-        corning = Company.objects.create(
-            name="Corning Inc.",
-            vat_number="TEST789012",
-            business_registration_number="REG789012"
-        )
-        tsmc = Company.objects.create(
-            name="Taiwan Semiconductor Manufacturing Company",
-            vat_number="TEST345678",
-            business_registration_number="REG345678"
-        )
+        # remove from initial setup
+        self.iphone_iphone_line_processor_transport_override.delete()
 
-        # Create company memberships
-        CompanyMembership.objects.create(user=admin_user, company=apple)
-        CompanyMembership.objects.create(user=admin_user, company=samsung)
-        CompanyMembership.objects.create(user=admin_user, company=corning)
-        CompanyMembership.objects.create(user=admin_user, company=tsmc)
-        CompanyMembership.objects.create(user=apple_user_1, company=apple)
-        CompanyMembership.objects.create(user=apple_user_2, company=apple)
-        CompanyMembership.objects.create(user=samsung_user_1, company=samsung)
-        CompanyMembership.objects.create(user=corning_user_1, company=corning)
-        CompanyMembership.objects.create(user=tsmc_user_1, company=tsmc)
-
-        # Add raw materials
-        glass_material = MaterialEmissionReference.objects.create(common_name="Glass")
-        MaterialEmissionReferenceFactor.objects.create(
-            emission_reference=glass_material,
-            lifecycle_stage=LifecycleStage.A1,
-            co_2_emission_factor=0.5,
-        )
-        self.silicon_material = MaterialEmissionReference.objects.create(common_name="Silicon")
-        MaterialEmissionReferenceFactor.objects.create(
-            emission_reference=self.silicon_material,
-            lifecycle_stage=LifecycleStage.A2,
-            co_2_emission_factor=0.3,
-        )
-        MaterialEmissionReferenceFactor.objects.create(
-            emission_reference=self.silicon_material,
-            lifecycle_stage=LifecycleStage.A1,
-            co_2_emission_factor=0.2,
-        )
-
-        # Add products to companies
-        self.processor = Product.objects.create(
-            name="A14 processor",
-            description="Main processor used in iPhones",
-            supplier=tsmc,
-            year_of_construction = 2025
-        )
+        #Add additional porducts
         self.processor2 = Product.objects.create(
             name="A16 processor",
             description="ARM processor",
-            supplier=tsmc,
+            supplier=self.tsmc,
             year_of_construction=2025
         )
         self.pins= Product.objects.create(
             name="Pins",
             description="Pins",
-            supplier=samsung,
+            supplier=self.samsung,
             year_of_construction=2025
         )
         self.casing = Product.objects.create(
             name="Casing",
             description="Casing",
-            supplier=apple,
+            supplier=self.apple,
             year_of_construction=2025
         )
         fake_product = Product.objects.create(
             name="Fake Product",
             description="Product that only has overrides",
-            supplier=tsmc,
+            supplier=self.tsmc,
             year_of_construction=2025
         )
+
+        # Add additional product material emissions
         self.fake_material_emission = MaterialEmission.objects.create(
             parent_product=fake_product,
             weight=0.5,
             reference=self.silicon_material,
-        )
-        self.processor_material_emission = MaterialEmission.objects.create(
-            parent_product=self.processor,
-            weight=0.5,
-            reference=self.silicon_material,
-        )
-        processor_material_emission2 = MaterialEmission.objects.create(
-            parent_product=self.processor,
-            weight=0.5,
-            reference=glass_material,
         )
         self.processor_material_emission3 = MaterialEmission.objects.create(
             parent_product=self.processor2,
@@ -141,39 +66,8 @@ class EmissionTraceTestCase(APITestCase):
             weight=0.5,
             reference=self.silicon_material,
         )
-        camera = Product.objects.create(
-            name="Camera module",
-            description="Camera module used in various phones",
-            supplier=samsung,
-            year_of_construction=2025
-        )
-        camera_material_emission = MaterialEmission.objects.create(
-            parent_product=camera,
-            weight=0.2,
-            reference=glass_material,
-        )
-        display = Product.objects.create(
-            name="Display",
-            description="Display used in various phones",
-            supplier=samsung,
-            year_of_construction=2025
-        )
-        display_self_estimated_pollution = MaterialEmission.objects.create(
-            parent_product=display,
-            weight=0.3,
-            reference=glass_material,
-        )
-        self.iphone = Product.objects.create(
-            name="iPhone 17",
-            description="Latest iPhone model",
-            supplier=apple,
-            year_of_construction=2025
-        )
-        iphone_line_processor = ProductBoMLineItem.objects.create(
-            parent_product=self.iphone,
-            line_item_product=self.processor,
-            quantity=1
-        )
+
+        # Add additional BoM items
         processor2_base = ProductBoMLineItem.objects.create(
             parent_product=self.processor2,
             line_item_product=self.processor,
@@ -190,29 +84,7 @@ class EmissionTraceTestCase(APITestCase):
             quantity=3
         )
 
-        self.transport_air = TransportEmissionReference.objects.create(common_name="Air transport")
-        TransportEmissionReferenceFactor.objects.create(
-            emission_reference=self.transport_air,
-            lifecycle_stage=LifecycleStage.A3,
-            co_2_emission_factor=0.2,
-        )
-        TransportEmissionReferenceFactor.objects.create(
-            emission_reference=self.transport_air,
-            lifecycle_stage=LifecycleStage.A4,
-            co_2_emission_factor=0.3,
-        )
-        transport_road = TransportEmissionReference.objects.create(common_name="Road transport")
-        TransportEmissionReferenceFactor.objects.create(
-            emission_reference=transport_road,
-            lifecycle_stage=LifecycleStage.A3,
-            co_2_emission_factor=0.05,
-        )
-        self.iphone_line_processor_transport = TransportEmission.objects.create(
-            parent_product=self.iphone,
-            distance=2000,
-            weight=0.5,
-            reference=self.transport_air
-        )
+        # Add additional BoM item transport emissions
         self.arm_processor_transport = TransportEmission.objects.create(
             parent_product=self.processor2,
             distance=2000,
@@ -225,51 +97,8 @@ class EmissionTraceTestCase(APITestCase):
             weight=0.3,
             reference=self.transport_air
         )
-        EmissionBoMLink.objects.create(
-            emission=self.iphone_line_processor_transport,
-            line_item=iphone_line_processor,
-        )
-        iphone_line_camera = ProductBoMLineItem.objects.create(
-            parent_product=self.iphone,
-            line_item_product=camera,
-            quantity=3
-        )
-        iphone_line_camera_transport = TransportEmission.objects.create(
-            parent_product=self.iphone,
-            distance=500,
-            weight=0.2,
-            reference=transport_road,
-        )
-        EmissionBoMLink.objects.create(
-            emission=iphone_line_camera_transport,
-            line_item=iphone_line_camera,
-        )
-        iphone_line_display = ProductBoMLineItem.objects.create(
-            parent_product=self.iphone,
-            line_item_product=display,
-            quantity=1
-        )
-        iphone_line_display_transport = TransportEmission.objects.create(
-            parent_product=self.iphone,
-            distance=800,
-            weight=0.3,
-            reference=transport_road,
-        )
-        EmissionBoMLink.objects.create(
-            emission=iphone_line_display_transport,
-            line_item=iphone_line_display,
-        )
-        self.assembly_line_reference = ProductionEnergyEmissionReference.objects.create(common_name="Assembly line")
-        ProductionEnergyEmissionReferenceFactor.objects.create(
-            emission_reference=self.assembly_line_reference,
-            lifecycle_stage=LifecycleStage.A3,
-            co_2_emission_factor=0.4,
-        )
-        self.iphone_assembly_emission = ProductionEnergyEmission.objects.create(
-            parent_product=self.iphone,
-            energy_consumption=2000,
-            reference=self.assembly_line_reference,
-        )
+
+        # Add additional production energy emissions to products
         self.arm_processor_assembly_emission = ProductionEnergyEmission.objects.create(
             parent_product=self.processor2,
             energy_consumption=2000,
@@ -280,27 +109,12 @@ class EmissionTraceTestCase(APITestCase):
             energy_consumption=2000,
             reference=self.assembly_line_reference,
         )
-        self.update_processor = UserEnergyEmissionReference.objects.create(common_name="Update processor")
-        UserEnergyEmissionReferenceFactor.objects.create(
-            emission_reference=self.update_processor,
-            lifecycle_stage=LifecycleStage.A5,
-            co_2_emission_factor=0.2,
-        )
+
+        # Add additional user energy emissions to products
         self.arm_processor_update_emission = UserEnergyEmission.objects.create(
             parent_product=self.processor2,
             energy_consumption=500,
             reference=self.update_processor,
-        )
-        self.charging_phone = UserEnergyEmissionReference.objects.create(common_name="Charging phone")
-        UserEnergyEmissionReferenceFactor.objects.create(
-            emission_reference=self.charging_phone,
-            lifecycle_stage=LifecycleStage.A5,
-            co_2_emission_factor=0.2,
-        )
-        self.iphone_charging_emission = UserEnergyEmission.objects.create(
-            parent_product=self.iphone,
-            energy_consumption=500,
-            reference=self.charging_phone
         )
         self.fake_user_energy_emission = UserEnergyEmission.objects.create(
             parent_product=fake_product,
@@ -308,67 +122,59 @@ class EmissionTraceTestCase(APITestCase):
             reference=self.charging_phone
         )
 
+        # Add additional emission override factors
         EmissionOverrideFactor.objects.create(
             emission=self.arm_processor_assembly_emission,
             lifecycle_stage=LifecycleStage.A5,
-            co_2_emission_factor=3000,
+            co_2_emission_factor_biogenic=3000,
         )
         EmissionOverrideFactor.objects.create(
             emission=self.arm_processor_transport,
             lifecycle_stage=LifecycleStage.A3,
-            co_2_emission_factor=3000,
+            co_2_emission_factor_biogenic=3000,
         )
         ProductEmissionOverrideFactor.objects.create(
             emission=self.pins,
             lifecycle_stage=LifecycleStage.A1,
-            co_2_emission_factor=300,
+            co_2_emission_factor_biogenic=300,
         )
 
         #Overrides for fake_product
         EmissionOverrideFactor.objects.create(
             emission=self.fake_material_emission,
             lifecycle_stage=LifecycleStage.A1,
-            co_2_emission_factor=9999
+            co_2_emission_factor_biogenic=9999
         )
         EmissionOverrideFactor.objects.create(
             emission=self.fake_transport_emission,
             lifecycle_stage=LifecycleStage.A3,
-            co_2_emission_factor=69
+            co_2_emission_factor_biogenic=69
         )
         EmissionOverrideFactor.objects.create(
             emission=self.fake_production_energy_emission,
             lifecycle_stage=LifecycleStage.A3,
-            co_2_emission_factor=420
+            co_2_emission_factor_biogenic=420
         )
         EmissionOverrideFactor.objects.create(
             emission=self.fake_production_energy_emission,
             lifecycle_stage=LifecycleStage.A4,
-            co_2_emission_factor=420
+            co_2_emission_factor_biogenic=420
         )
         EmissionOverrideFactor.objects.create(
             emission=self.fake_user_energy_emission,
             lifecycle_stage=LifecycleStage.A5,
-            co_2_emission_factor=21
+            co_2_emission_factor_biogenic=21
         )
 
-        ProductSharingRequest.objects.create(
-            product = camera,
-            requester = apple,
-            status = ProductSharingRequestStatus.ACCEPTED
-        )
-        ProductSharingRequest.objects.create(
-            product=self.processor,
-            requester=apple,
-            status=ProductSharingRequestStatus.REJECTED
-        )
+        # Add additional product sharing requests
         ProductSharingRequest.objects.create(
             product=self.pins,
-            requester=tsmc,
+            requester=self.tsmc,
             status=ProductSharingRequestStatus.ACCEPTED
         )
         ProductSharingRequest.objects.create(
             product=self.casing,
-            requester=tsmc,
+            requester=self.tsmc,
             status=ProductSharingRequestStatus.REJECTED
         )
 
@@ -389,10 +195,10 @@ class EmissionTraceTestCase(APITestCase):
         """
         emission_subtotal = {}
         for factor in reference.reference_factors.all():
-            emission_subtotal[factor.lifecycle_stage] = factor.co_2_emission_factor
+            emission_subtotal[factor.lifecycle_stage] = factor.co_2_emission_factor_biogenic
         self.assertEqual(len(emission_subtotal), len(trace.emissions_subtotal))
         for lifecycle_stage in emission_subtotal:
-            self.assertEqual(emission_subtotal[lifecycle_stage], trace.emissions_subtotal[lifecycle_stage])
+            self.assertEqual(emission_subtotal[lifecycle_stage], trace.emissions_subtotal[lifecycle_stage].biogenic)
 
     def _check_emission_trace(
             self,
@@ -425,14 +231,14 @@ class EmissionTraceTestCase(APITestCase):
             if override.lifecycle_stage in emission_subtotal_overriden:
                 emission_subtotal_overriden[override.lifecycle_stage] = (
                         emission_subtotal_overriden[override.lifecycle_stage]+
-                        override.co_2_emission_factor)
+                        override.co_2_emission_factor_biogenic)
             else:
-                emission_subtotal_overriden[override.lifecycle_stage] = override.co_2_emission_factor
+                emission_subtotal_overriden[override.lifecycle_stage] = override.co_2_emission_factor_biogenic
 
         self.assertEqual(len(emission_subtotal_overriden), len(trace.emissions_subtotal))
         for lifecycle_stage in emission_subtotal_overriden:
             self.assertEqual(emission_subtotal_overriden[lifecycle_stage],
-                             trace.emissions_subtotal[lifecycle_stage])
+                             trace.emissions_subtotal[lifecycle_stage].biogenic)
 
         self.assertEqual(
             trace.mentions[0].mention_class,
@@ -467,14 +273,14 @@ class EmissionTraceTestCase(APITestCase):
             self.assertEqual(emission_subtotal_by_weight[lifecycle_stage],
                              trace.emissions_subtotal[lifecycle_stage])
 
-    def test_materia_emission_reference_get_emission_trace(self):
+    def test_material_emission_reference_get_emission_trace(self):
         reference = self.silicon_material
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = reference.get_emission_trace()
         self._check_emission_reference_trace(returned_trace, reference)
 
 
-    def test_materia_emission_get_emission_trace(self):
+    def test_material_emission_get_emission_trace(self):
         emission = self.processor_material_emission
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = emission.get_emission_trace()
@@ -484,7 +290,7 @@ class EmissionTraceTestCase(APITestCase):
             self.assertEqual(emission.weight, child.quantity)
         self._check_emission_trace(returned_trace)
 
-    def test_materia_emission_get_emission_trace_override(self):
+    def test_material_emission_get_emission_trace_override(self):
         emission = self.fake_material_emission
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = emission.get_emission_trace()

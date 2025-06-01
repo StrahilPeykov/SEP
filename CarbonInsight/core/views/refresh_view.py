@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.exceptions import TokenError, AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.settings import api_settings
@@ -30,10 +30,7 @@ class RefreshView(TokenRefreshView):
         except Exception as e:
             # Check if this is a User.DoesNotExist error
             if "User matching query does not exist" in str(e):
-                return Response(
-                    {"detail": "User account has been deleted or deactivated."},
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
+                raise AuthenticationFailed("User account has been deleted or deactivated.")
             # Re-raise other exceptions
             raise
 

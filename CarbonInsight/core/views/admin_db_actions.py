@@ -83,13 +83,13 @@ def populate_db(request):
     MaterialEmissionReferenceFactor.objects.create(
         emission_reference=glass_material,
         lifecycle_stage = LifecycleStage.A1,
-        co_2_emission_factor=0.5,
+        co_2_emission_factor_biogenic=0.5,
     )
     silicon_material = MaterialEmissionReference.objects.create(common_name="Silicon")
     MaterialEmissionReferenceFactor.objects.create(
         emission_reference=silicon_material,
         lifecycle_stage = LifecycleStage.A2,
-        co_2_emission_factor=0.3,
+        co_2_emission_factor_biogenic=0.3,
     )
 
     # Add products to companies
@@ -170,13 +170,13 @@ def populate_db(request):
     TransportEmissionReferenceFactor.objects.create(
         emission_reference=transport_air,
         lifecycle_stage=LifecycleStage.A3,
-        co_2_emission_factor=0.2,
+        co_2_emission_factor_biogenic=0.2,
     )
     transport_road = TransportEmissionReference.objects.create(common_name="Road transport")
     TransportEmissionReferenceFactor.objects.create(
         emission_reference=transport_road,
         lifecycle_stage=LifecycleStage.A3,
-        co_2_emission_factor=0.05,
+        co_2_emission_factor_biogenic=0.05,
     )
     iphone_line_processor_transport = TransportEmission.objects.create(
         parent_product=iphone,

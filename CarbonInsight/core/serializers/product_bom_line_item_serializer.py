@@ -54,6 +54,20 @@ class ProductBoMLineItemSerializer(serializers.ModelSerializer):
         model = ProductBoMLineItem
         fields = ("id", "quantity", "line_item_product", "line_item_product_id", "parent_product", "product_sharing_request_status", "emissions")
         read_only_fields = ("parent_product", "line_item_product")
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=ProductBoMLineItem.objects.all(),
+                fields=["parent_product", "line_item_product"],
+                message="A BoM line item with this product already exists in the parent product's BoM."
+            )
+        ]
 
     def get_product_sharing_request_status(self, obj:ProductBoMLineItem) -> ProductSharingRequestStatus:
         return obj.product_sharing_request_status
+
+    def to_internal_value(self, data):
+        # first perform the normal deserialization
+        validated = super().to_internal_value(data)
+        # now inject product from the URL
+        validated["parent_product"] = self.context["view"].get_parent_product()
+        return validated

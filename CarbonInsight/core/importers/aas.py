@@ -119,7 +119,8 @@ def aas_to_emissions(objects: DictObjectStore) -> Tuple[Iterable[Emission], Iter
             emission_override_factor = EmissionOverrideFactor()
             emission_override_factor.emission = emission
             emission_override_factor.lifecycle_stage = lifecycle_stage
-            emission_override_factor.co_2_emission_factor = pcf_co_2_eq / len(life_cycle_phases)
+            emission_override_factor.co_2_emission_factor_biogenic = 0
+            emission_override_factor.co_2_emission_factor_non_biogenic = pcf_co_2_eq / len(life_cycle_phases)
             emission_override_factors.append(emission_override_factor)
         emissions.append(emission)
 
@@ -176,24 +177,21 @@ def get_error_critical_messages(result: AasTestResult) -> list[str]:
     return errors
 
 def validate_aas_aasx(file:BytesIO, silent:bool=False) -> bool:
-    result = check_aasx_file(file)  # I KNOW THIS IS A TYPING ISSUE, BUT USING TEXTIO CRASHES THE CHECKER
-    file.seek(0)
+    result = check_aasx_file(BytesIO(file.getvalue()))  # I KNOW THIS IS A TYPING ISSUE, BUT USING TEXTIO CRASHES THE CHECKER
     if not silent and not result.ok():
         raise ValidationError({"file":f"AAS AASX file is not valid: \n"+'\n'.join(get_error_critical_messages(result))})
     return result.ok()
 
 def validate_aas_json(file:BytesIO, silent:bool=False) -> bool:
-    text_io = TextIOWrapper(file)
+    text_io = TextIOWrapper(BytesIO(file.getvalue()))
     result = check_json_file(text_io)
-    file.seek(0)
     if not silent and not result.ok():
         raise ValidationError({"file":f"AAS JSON file is not valid: \n"+'\n'.join(get_error_critical_messages(result))})
     return result.ok()
 
 def validate_aas_xml(file:BytesIO, silent:bool=False) -> bool:
-    text_io = TextIOWrapper(file)
+    text_io = TextIOWrapper(BytesIO(file.getvalue()))
     result = check_xml_file(text_io)
-    file.seek(0)
     if not silent and not result.ok():
         raise ValidationError({"file":f"AAS XML file is not valid: \n"+'\n'.join(get_error_critical_messages(result))})
     return result.ok()

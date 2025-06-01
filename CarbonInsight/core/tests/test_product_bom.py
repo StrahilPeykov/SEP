@@ -4,133 +4,16 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from core.models import CompanyMembership, Product, ProductBoMLineItem, \
     ProductionEnergyEmissionReference, EmissionBoMLink, ProductionEnergyEmission, UserEnergyEmissionReference, \
-    UserEnergyEmission, MaterialEmissionReference, MaterialEmissionReferenceFactor, LifecycleStage, MaterialEmission
+    UserEnergyEmission, MaterialEmissionReference, MaterialEmissionReferenceFactor, LifecycleStage, MaterialEmission, \
+    TransportEmissionReference, TransportEmissionReferenceFactor, TransportEmission
 from core.models.company import Company
+from core.tests.setup_functions import paint_companies_setup
 
 User = get_user_model()
 
 class ProductAPITest(APITestCase):
     def setUp(self):
-
-        #Create User
-        self.red_company_user = User.objects.create_user(
-            username="1@redcompany.com", email="1@redcompany.com", password="1234567890")
-
-        #Obtain JWT for user
-        url = reverse("token_obtain_pair")
-        response = self.client.post(
-            url,
-            {"username": "1@redcompany.com", "password": "1234567890"},
-            format="json"
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.access_token = response.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
-
-        self.red_company = Company.objects.create(
-            name="Red company BV",
-            vat_number="VATRED",
-            business_registration_number="NL123456"
-        )
-
-        self.blue_company = Company.objects.create(
-            name="Blue company BV",
-            vat_number="VATBLUE",
-            business_registration_number="NL654321"
-        )
-
-        CompanyMembership.objects.create(user=self.red_company_user, company=self.red_company)
-
-        self.red_paint = Product.objects.create(
-            name="Red paint",
-            description="Red paint",
-            supplier=self.red_company,
-            manufacturer_name="Red company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="12345678999",
-            is_public=True
-        )
-
-        self.purple_paint = Product.objects.create(
-            name="Purple paint",
-            description="Purple paint",
-            supplier=self.red_company,
-            manufacturer_name="Red company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="12345678988",
-            is_public=True
-        )
-
-        self.red_secret_plans = Product.objects.create(
-            name="Secret Plan Red",
-            description="Secret Plan Red",
-            supplier=self.red_company,
-            manufacturer_name="Red company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="111222333444",
-            is_public=False
-        )
-
-        self.blue_paint = Product.objects.create(
-            name="Blue paint",
-            description="Blue paint",
-            supplier=self.blue_company,
-            manufacturer_name="Blue company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="12345678999",
-            is_public=True
-        )
-
-        self.magenta_paint = Product.objects.create(
-            name="Magenta paint",
-            description="Magenta paint",
-            supplier=self.blue_company,
-            manufacturer_name="Blue company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="12345678999",
-            is_public=True
-        )
-
-        self.blue_secret_plans = Product.objects.create(
-            name="Secret Plan Blue",
-            description="Secret Plan Blue",
-            supplier=self.blue_company,
-            manufacturer_name="Blue company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="111222333444",
-            is_public=False
-        )
+        paint_companies_setup(self)
 
         self.product_for_emission_linking_parent = Product.objects.create(
             name="Product For Emission Linking Parent",
@@ -180,6 +63,74 @@ class ProductAPITest(APITestCase):
         self.mat_ref_plastic_bom = MaterialEmissionReference.objects.create(
             common_name="Plastic for BOM"
         )
+        self.transport_ref_ship = TransportEmissionReference.objects.create(
+            common_name="Ship Transport (BOM Test)"
+        )
+        TransportEmissionReferenceFactor.objects.create(
+            emission_reference=self.transport_ref_ship,
+            lifecycle_stage=LifecycleStage.A4,
+            co_2_emission_factor_biogenic=0.01
+        )
+
+    def test_transport_emission_linked_to_other_product_bom_item_detail(self):
+        bom_item_other = ProductBoMLineItem.objects.create(
+            parent_product=self.red_paint,
+            line_item_product=self.blue_paint,
+            quantity=1
+        )
+
+        transport_emission_other_product = TransportEmission.objects.create(
+            parent_product=self.purple_paint,
+            distance=500.0,
+            weight=100.0,
+            reference=self.transport_ref_ship,
+        )
+
+        EmissionBoMLink.objects.create(
+            emission=transport_emission_other_product,
+            line_item=bom_item_other
+        )
+
+        url = reverse(
+            "product-transport-emissions-detail",
+            args=[self.red_company.id, self.purple_paint.id, transport_emission_other_product.id]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('line_items', response.data)
+        self.assertIsInstance(response.data['line_items'], list)
+        self.assertIn(bom_item_other.id, response.data['line_items'],
+                      f"BOM item ID {bom_item_other.id} unexpectedly not found in transport emission's line_items: {response.data['line_items']}.")
+
+    def test_transport_emission_linked_to_same_product_bom_item_detail(self):
+        bom_item = ProductBoMLineItem.objects.create(
+            parent_product=self.product_for_emission_linking_parent,
+            line_item_product=self.product_for_emission_linking_child,
+            quantity=1
+        )
+
+        transport_emission = TransportEmission.objects.create(
+            parent_product=self.product_for_emission_linking_child,
+            distance=200.0,
+            weight=50.0,
+            reference=self.transport_ref_ship,
+        )
+
+        EmissionBoMLink.objects.create(
+            emission=transport_emission,
+            line_item=bom_item
+        )
+
+        url = reverse(
+            "product-transport-emissions-detail",
+            args=[self.red_company.id, self.product_for_emission_linking_child.id, transport_emission.id]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('line_items', response.data)
+        self.assertIsInstance(response.data['line_items'], list)
+        self.assertIn(bom_item.id, response.data['line_items'],
+                      f"BOM item ID {bom_item.id} not in transport emission's line_items.")
 
     def test_material_emission_linked_to_same_product_not_in_bom(self):
         material_emission_parent = MaterialEmission.objects.create(
@@ -443,13 +394,13 @@ class ProductAPITest(APITestCase):
         )
 
         url1 = reverse("product-bom-detail", args=[
-            self.red_company_user.id,
+            self.red_company_user1.id,
             self.purple_paint.id,
             item1.id
         ])
 
         url2 = reverse("product-bom-detail", args=[
-            self.red_company_user.id,
+            self.red_company_user1.id,
             self.purple_paint.id,
             item2.id
         ])
@@ -464,7 +415,7 @@ class ProductAPITest(APITestCase):
 
     def test_get_specific_product_bom_not_found(self):
         url = reverse("product-bom-detail", args=[
-            self.red_company_user.id,
+            self.red_company_user1.id,
             self.purple_paint.id,
             1
         ])
@@ -945,5 +896,72 @@ class ProductAPITest(APITestCase):
         self.assertTrue(ProductBoMLineItem.objects.filter(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
+            quantity=1
+        ).exists())
+
+    def test_create_bom_line_item_duplicate(self):
+        url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
+        response = self.client.post(url, {
+            "quantity": 1,
+            "line_item_product_id": self.red_paint.id
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(ProductBoMLineItem.objects.filter(
+            line_item_product=self.red_paint,
+            parent_product=self.purple_paint,
+            quantity=1
+        ).exists())
+
+        response = self.client.post(url, {
+            "quantity": 1,
+            "line_item_product_id": self.red_paint.id
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ProductBoMLineItem.objects.filter(
+            line_item_product=self.red_paint,
+            parent_product=self.purple_paint,
+            quantity=1
+        ).count(),1)
+
+    def test_create_bom_line_item_recursive_error(self):
+        url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
+        response = self.client.post(url, {
+            "quantity": 1,
+            "line_item_product_id": self.red_paint.id
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(ProductBoMLineItem.objects.filter(
+            line_item_product=self.red_paint,
+            parent_product=self.purple_paint,
+            quantity=1
+        ).exists())
+
+        url = reverse("product-bom-list", args=[self.red_company.id, self.red_paint.id])
+        response = self.client.post(url, {
+            "quantity": 1,
+            "line_item_product_id": self.purple_paint.id
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ProductBoMLineItem.objects.filter(
+            line_item_product=self.purple_paint,
+            parent_product=self.red_paint,
+            quantity=1
+        ).exists())
+
+    def test_create_bom_line_item_recursive_self_error(self):
+        url = reverse("product-bom-list", args=[self.red_company.id, self.red_paint.id])
+        response = self.client.post(url, {
+            "quantity": 1,
+            "line_item_product_id": self.red_paint.id
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ProductBoMLineItem.objects.filter(
+            line_item_product=self.red_paint,
+            parent_product=self.red_paint,
             quantity=1
         ).exists())

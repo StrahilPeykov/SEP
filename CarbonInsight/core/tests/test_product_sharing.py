@@ -4,116 +4,13 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from core.models import CompanyMembership, Product, ProductSharingRequest, ProductSharingRequestStatus
 from core.models.company import Company
+from core.tests.setup_functions import paint_companies_setup
 
 User = get_user_model()
 
 class ProductAPITest(APITestCase):
     def setUp(self):
-
-        #Create User
-        self.red_company_user = User.objects.create_user(
-            username="1@redcompany.com", email="1@redcompany.com", password="1234567890")
-
-        #Obtain JWT for user
-        url = reverse("token_obtain_pair")
-        response = self.client.post(
-            url,
-            {"username": "1@redcompany.com", "password": "1234567890"},
-            format="json"
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.access_token = response.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
-
-        self.red_company = Company.objects.create(
-            name="Red company BV",
-            vat_number="VATRED",
-            business_registration_number="NL123456"
-        )
-
-        self.blue_company = Company.objects.create(
-            name="Blue company BV",
-            vat_number="VATBLUE",
-            business_registration_number="NL654321"
-        )
-
-        CompanyMembership.objects.create(user=self.red_company_user, company=self.red_company)
-
-        self.red_paint = Product.objects.create(
-            name="Red paint",
-            description="Red paint",
-            supplier=self.red_company,
-            manufacturer_name="Red company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="12345678999",
-            is_public=True
-        )
-
-        self.purple_paint = Product.objects.create(
-            name="Purple paint",
-            description="Purple paint",
-            supplier=self.red_company,
-            manufacturer_name="Red company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="12345678988",
-            is_public=True
-        )
-
-        self.red_secret_plans = Product.objects.create(
-            name="Secret Plan Red",
-            description="Secret Plan Red",
-            supplier=self.red_company,
-            manufacturer_name="Red company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="111222333444",
-            is_public=False
-        )
-
-        self.blue_paint = Product.objects.create(
-            name="Blue paint",
-            description="Blue paint",
-            supplier=self.blue_company,
-            manufacturer_name="Blue company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="12345678999",
-            is_public=True
-        )
-
-        self.blue_secret_plans = Product.objects.create(
-            name="Secret Plan Blue",
-            description="Secret Plan Blue",
-            supplier=self.blue_company,
-            manufacturer_name="Blue company",
-            manufacturer_country="NL",
-            manufacturer_city="Eindhoven",
-            manufacturer_street="De Zaale",
-            manufacturer_zip_code="5612AZ",
-            year_of_construction=2025,
-            family="Paint",
-            sku="111222333444",
-            is_public=False
-        )
+        paint_companies_setup(self)
 
     def test_request_product_sharing_own_company_product(self):
         url = reverse("product-request-access", args=[self.red_company.id, self.red_paint.id])

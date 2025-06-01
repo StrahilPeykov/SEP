@@ -9,7 +9,7 @@ from import_export.results import RowResult
 from rest_framework import viewsets, status, serializers
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied, UnsupportedMediaType
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FileUploadParser, MultiPartParser
@@ -28,6 +28,8 @@ from core.serializers.product_serializer import ProductSerializer
 from core.serializers.product_sharing_request_serializer import ProductSharingRequestRequestAccessSerializer
 from core.services.ai_service import generate_ai_response
 from core.views.mixins.company_mixin import CompanyMixin
+
+from core.importers.aas import validate_aas_aasx, validate_aas_json, validate_aas_xml
 
 
 @extend_schema(
@@ -124,27 +126,21 @@ class ProductViewSet(
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        company = Company.objects.get(pk=serializer.data.get("requester"))
+        requester = Company.objects.get(pk=serializer.data.get("requester"))
         user = request.user
 
-        if not company.user_is_member(user):
-            return Response(
-                {"detail": "You are not a member of this company."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        if not requester.user_is_member(user):
+            raise PermissionDenied("You are not a member of the requesting company.")
 
         # Try to request access
         try:
             product.request(
-                requester=company,
+                requester=requester,
                 user=user,
             )
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
     @extend_schema(
         tags=["Products"],
@@ -178,6 +174,7 @@ class ProductViewSet(
     def export_aas_aasx(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_aas_aasx()
+        validate_aas_aasx(file)
         return FileResponse(
             file,
             as_attachment=True,
@@ -203,6 +200,7 @@ class ProductViewSet(
     def export_aas_xml(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_aas_xml()
+        validate_aas_xml(file)
         return FileResponse(
             file,
             as_attachment=True,
@@ -228,6 +226,7 @@ class ProductViewSet(
     def export_aas_json(self, request, *args, **kwargs) -> FileResponse:
         product = self.get_object()
         file = product.export_to_aas_json()
+        validate_aas_json(file)
         return FileResponse(
             file,
             as_attachment=True,
@@ -305,10 +304,7 @@ class ProductViewSet(
     def import_aas_aasx(self, request, *args, **kwargs):
         # Ensure exactly one file was sent
         if 'file' not in request.FILES or len(request.FILES) != 1:
-            return Response(
-                {"detail": "Please upload exactly one file under the 'file' key."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
 
         uploaded = request.FILES['file']
 
@@ -317,10 +313,7 @@ class ProductViewSet(
         try:
             validator(uploaded)
         except ValidationError:
-            return Response(
-                {"detail": "Invalid file extension. Only .aasx is allowed."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise UnsupportedMediaType("Invalid file extension. Only .aasx is allowed.")
 
         # Read into BytesIO
         file_bytes = uploaded.read()
@@ -351,10 +344,7 @@ class ProductViewSet(
     def import_aas_json(self, request, *args, **kwargs):
         # Ensure exactly one file was sent
         if 'file' not in request.FILES or len(request.FILES) != 1:
-            return Response(
-                {"detail": "Please upload exactly one file under the 'file' key."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
 
         uploaded = request.FILES['file']
 
@@ -363,10 +353,7 @@ class ProductViewSet(
         try:
             validator(uploaded)
         except ValidationError:
-            return Response(
-                {"detail": "Invalid file extension. Only .json is allowed."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise UnsupportedMediaType("Invalid file extension. Only .json is allowed.")
 
         # Read into BytesIO
         file_bytes = uploaded.read()
@@ -397,10 +384,7 @@ class ProductViewSet(
     def import_aas_xml(self, request, *args, **kwargs):
         # Ensure exactly one file was sent
         if 'file' not in request.FILES or len(request.FILES) != 1:
-            return Response(
-                {"detail": "Please upload exactly one file under the 'file' key."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
 
         uploaded = request.FILES['file']
 
@@ -409,10 +393,7 @@ class ProductViewSet(
         try:
             validator(uploaded)
         except ValidationError:
-            return Response(
-                {"detail": "Invalid file extension. Only .xml is allowed."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise UnsupportedMediaType("Invalid file extension. Only .xml is allowed.")
 
         # Read into BytesIO
         file_bytes = uploaded.read()
@@ -499,10 +480,7 @@ class ProductViewSet(
     )
     def import_tabular(self, request, *args, **kwargs):
         if 'file' not in request.FILES or len(request.FILES) != 1:
-            return Response(
-                {"detail": "Please upload exactly one file under the 'file' key."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
 
         uploaded = request.FILES['file']
 
@@ -512,10 +490,7 @@ class ProductViewSet(
         try:
             validator(uploaded)
         except ValidationError:
-            return Response(
-                {"detail": f"Invalid file extension. Only {', '.join(allowed)} are allowed."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise UnsupportedMediaType("Invalid file extension. Only .csv, .xls, .xlsx is allowed.")
 
         # Read raw bytes and determine format
         name = uploaded.name
@@ -555,7 +530,7 @@ class ProductViewSet(
                     "row": err.row,
                     "error": repr(err.error),
                 })
-        return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+        raise ValidationError(errors)
 
     @extend_schema(
         tags=["Products"],

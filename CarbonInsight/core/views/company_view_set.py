@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import viewsets, mixins, status
+from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
@@ -125,20 +127,20 @@ class CompanyUserViewSet(
         try:
             user = User.objects.get(username=request.data.get('username'))
         except User.DoesNotExist:
-            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound("User with this username does not exist.")
         CompanyMembership.objects.get_or_create(user=user, company=self.get_parent_company())
-        return Response({'status': 'User added'}, status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_201_CREATED)
 
     def destroy(self, request, pk=None, company_pk=None):
         try:
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:
-            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound("User with this ID does not exist.")
         try:
             membership = CompanyMembership.objects.get(user=user, company=self.get_parent_company())
             membership.delete()
         except CompanyMembership.DoesNotExist:
-            return Response({'detail': 'Membership not found'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound("User is not a member of this company.")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 @extend_schema_view(

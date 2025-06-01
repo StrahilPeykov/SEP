@@ -2,10 +2,10 @@ import logging
 from typing import Union, Literal, Optional
 
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F, Q
+from rest_framework.exceptions import ValidationError
 
 from .emission_trace import EmissionTrace
 from .product_sharing_request import ProductSharingRequestStatus, ProductSharingRequest

@@ -8,7 +8,7 @@ from core.models.product import ProductEmissionOverrideFactor
 
 class ProductEmissionOverrideFactorInline(admin.TabularInline):
     model = ProductEmissionOverrideFactor
-    fields = ("lifecycle_stage", "co_2_emission_factor")
+    fields = ("lifecycle_stage", "co_2_emission_factor_biogenic", "co_2_emission_factor_non_biogenic")
     extra = 0
 
 class ProductBoMLineItemInline(admin.TabularInline):
@@ -45,7 +45,8 @@ class ProductSharingRequestInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(VersionAdmin):
     model = Product
-    list_display = ("name", "supplier", "manufacturer_name", "sku", "get_emission_total", "get_emission_trace")
+    list_display = ("name", "supplier", "manufacturer_name", "sku", "is_public", "get_emission_total",
+                    "get_emission_total_non_biogenic", "get_emission_total_biogenic")
     search_fields = ("name", "supplier__name", "manufacturer_name", "sku",)
     ordering = ("name",)
     list_filter = (
@@ -58,3 +59,11 @@ class ProductAdmin(VersionAdmin):
     def get_emission_total(self, product:Product) -> float:
         return product.get_emission_trace().total
     get_emission_total.short_description = "Total emissions"
+
+    def get_emission_total_non_biogenic(self, product:Product) -> float:
+        return product.get_emission_trace().total_non_biogenic
+    get_emission_total_non_biogenic.short_description = "Total non-biogenic emissions"
+
+    def get_emission_total_biogenic(self, product:Product) -> float:
+        return product.get_emission_trace().total_biogenic
+    get_emission_total_biogenic.short_description = "Total biogenic emissions"

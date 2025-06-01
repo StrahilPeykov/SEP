@@ -1,3 +1,4 @@
+from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,4 +24,4 @@ class ChangePasswordView(APIView):
         user = request.user
         user.set_password(serializer.validated_data["new_password"])
         user.save()
-        return Response({"detail": "Password changed successfully."})
+        return Response(status=HTTP_200_OK)

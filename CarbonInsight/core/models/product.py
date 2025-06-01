@@ -6,7 +6,8 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 from django_countries.fields import CountryField
 
-from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionTraceChild
+from .emission_trace import EmissionTrace, EmissionTraceMentionClass, EmissionTraceMention, EmissionTraceChild, \
+    EmissionSplit
 from .lifecycle_stage import LifecycleStage
 from .pcf_calculation_method import PcfCalculationMethod
 from .product_sharing_request import ProductSharingRequest, ProductSharingRequestStatus
@@ -154,7 +155,10 @@ class Product(models.Model):
                 message="Emission factors are overridden by user-provided values"
             ))
             for factor in self.override_factors.all():
-                root.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = factor.co_2_emission_factor
+                root.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = EmissionSplit(
+                    biogenic=factor.co_2_emission_factor_biogenic,
+                    non_biogenic=factor.co_2_emission_factor_non_biogenic
+                )
 
         return root
     get_emission_trace.short_description = "Emissions trace"
@@ -186,4 +190,5 @@ class ProductEmissionOverrideFactor(models.Model):
         choices=LifecycleStage.choices,
         default=LifecycleStage.OTHER,
     )
-    co_2_emission_factor = models.FloatField()
+    co_2_emission_factor_biogenic = models.FloatField(default=0.0)
+    co_2_emission_factor_non_biogenic = models.FloatField(default=0.0)
