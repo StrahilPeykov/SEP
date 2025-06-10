@@ -7,12 +7,10 @@ from .ai_conversation_log_admin import AIConversationLogAdmin
 from .company_admin import CompanyAdmin
 from .product_admin import ProductAdmin
 from .emission_admin import *
-from .material_emission_reference_admin import *
 from .production_energy_reference_emission_admin import *
 from .transport_reference_emission_admin import *
 from .user_energy_emission_admin import *
 
-admin.site.register(ProductSharingRequest, VersionAdmin)
 admin.site.register(User, UserAdmin)
 
 if 'runserver' in sys.argv:

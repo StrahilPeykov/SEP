@@ -1,8 +1,7 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicChildModelFilter, PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
-from reversion.admin import VersionAdmin
 
-from core.models import Emission, MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission, \
+from core.models import Emission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission, \
     EmissionBoMLink, EmissionOverrideFactor
 
 
@@ -19,9 +18,9 @@ class EmissionBoMLinkAdminInline(admin.TabularInline):
     verbose_name_plural = "BoM line item links"
 
 @admin.register(Emission)
-class EmissionAdmin(VersionAdmin, PolymorphicParentModelAdmin):
+class EmissionAdmin(PolymorphicParentModelAdmin):
     base_model = Emission  # Optional, explicitly set here.
-    child_models = (MaterialEmission, ProductionEnergyEmission, TransportEmission, UserEnergyEmission)
+    child_models = (ProductionEnergyEmission, TransportEmission, UserEnergyEmission)
     list_display = ("parent_product", "get_emission_total", "get_emission_total_biogenic",
                     "get_emission_total_non_biogenic", "pcf_calculation_method")
     list_filter = (PolymorphicChildModelFilter,)  # This is optional.
@@ -59,29 +58,22 @@ class EmissionChildAdmin(PolymorphicChildModelAdmin):
         return emission.get_emission_trace().total_biogenic
     get_emission_total_biogenic.short_description = "Total biogenic emissions"
 
-@admin.register(MaterialEmission)
-class MaterialEmissionAdmin(VersionAdmin, EmissionChildAdmin):
-    base_model = MaterialEmission
-    list_display = EmissionAdmin.list_display + ("weight", "reference")
-    list_filter = ("reference",)
-    show_in_index = True
-
 @admin.register(ProductionEnergyEmission)
-class ProductionEnergyEmissionAdmin(VersionAdmin, EmissionChildAdmin):
+class ProductionEnergyEmissionAdmin(EmissionChildAdmin):
     base_model = ProductionEnergyEmission
     list_display = EmissionAdmin.list_display + ("energy_consumption", "reference")
     list_filter = ("reference",)
     show_in_index = True
 
 @admin.register(TransportEmission)
-class TransportEmissionAdmin(VersionAdmin, EmissionChildAdmin):
+class TransportEmissionAdmin(EmissionChildAdmin):
     base_model = TransportEmission
     list_display = EmissionAdmin.list_display + ("distance", "weight", "reference")
     list_filter = ("reference",)
     show_in_index = True
 
 @admin.register(UserEnergyEmission)
-class UserEnergyEmissionAdmin(VersionAdmin, EmissionChildAdmin):
+class UserEnergyEmissionAdmin(EmissionChildAdmin):
     base_model = UserEnergyEmission
     list_display = EmissionAdmin.list_display + ("energy_consumption", "reference")
     list_filter = ("reference",)

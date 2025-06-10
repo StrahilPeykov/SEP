@@ -1,5 +1,4 @@
 from django.contrib import admin
-from reversion.admin import VersionAdmin
 
 from core.models import Company, CompanyMembership, Product
 
@@ -18,11 +17,24 @@ class ProductInline(admin.TabularInline):
     extra = 0
     verbose_name = "Product"
     verbose_name_plural = "Products"
+    can_delete = False
+    show_change_link = False
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(Company)
-class CompanyAdmin(VersionAdmin):
+class CompanyAdmin(admin.ModelAdmin):
     model = Company
-    list_display = ("name", "vat_number", "business_registration_number",)
-    search_fields = ("name", "vat_number", "business_registration_number",)
+    list_display = ("name", "vat_number", "business_registration_number", "is_reference", "auto_approve_product_sharing_requests")
+    search_fields = ("name", "vat_number", "business_registration_number", "is_reference", "auto_approve_product_sharing_requests")
     ordering = ("name",)
     inlines = [ProductInline,CompanyMembershipInline]
+    list_filter = (
+        ("is_reference", admin.BooleanFieldListFilter),
+        ("auto_approve_product_sharing_requests", admin.BooleanFieldListFilter),
+    )

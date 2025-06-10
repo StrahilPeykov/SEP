@@ -1,16 +1,19 @@
+from auditlog.models import LogEntry
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import viewsets, mixins, status
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.models import Company, CompanyMembership
+from core.models import Company, CompanyMembership, Product
 from core.permissions import IsCompanyMember, CanEditCompany
+from core.serializers.audit_log_entry_serializer import AuditLogEntrySerializer
 from core.serializers.company_serializer import CompanySerializer
 from core.serializers.user_serializer import UserUsernameSerializer, UserSerializer
 from core.views.mixins.company_mixin import CompanyMixin
@@ -57,12 +60,29 @@ User = get_user_model()
     ),
 )
 class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all()
+    queryset = Company.objects.filter(is_reference=False)
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated, CanEditCompany]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['name', 'vat_number', 'business_registration_number']
     search_fields = ['name', 'vat_number', 'business_registration_number']
+
+    def get_serializer_class(self):
+        if self.action in ['audit']:
+            return AuditLogEntrySerializer
+        return super().get_serializer_class()
+
+    def get_object(self):
+        raw_pk = self.kwargs["pk"]
+        if raw_pk == "reference":
+            # Look up the one reference company
+            try:
+                company = Company.objects.get(is_reference=True)
+            except Company.DoesNotExist:
+                raise NotFound("No reference company defined.")
+            return company
+        # Otherwise, fall back to normal queryset lookup
+        return super().get_object()
 
     def perform_create(self, serializer):
         company = serializer.save()
@@ -71,6 +91,33 @@ class CompanyViewSet(viewsets.ModelViewSet):
         if created:
             membership.save()
         return company
+
+    @extend_schema(
+        tags=["Companies"],
+        summary="Audit log for company",
+        description="Retrieve the audit log entries for a specific company and its products. ",
+        responses=AuditLogEntrySerializer(many=True),
+    )
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, CanEditCompany], url_path="audit")
+    def audit(self, request, *args, **kwargs):
+        company = self.get_object()
+
+        # 1. Company itself
+        base_q = Q(
+            content_type=ContentType.objects.get_for_model(company),
+            object_pk__in=[company.pk],
+        )
+
+        # 2. Product logs
+        base_q |= Q(
+            content_type=ContentType.objects.get_for_model(Product),
+            object_pk__in=Product.objects.filter(supplier=company).values_list('pk', flat=True),
+        )
+
+        logs = LogEntry.objects.filter(base_q).order_by("-timestamp")
+
+        serializer = self.get_serializer(logs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 @extend_schema(
     parameters=[
@@ -129,6 +176,8 @@ class CompanyUserViewSet(
         except User.DoesNotExist:
             raise NotFound("User with this username does not exist.")
         CompanyMembership.objects.get_or_create(user=user, company=self.get_parent_company())
+        LogEntry.objects.log_create(instance=self.get_parent_company(), force_log=True, action=LogEntry.Action.CREATE,
+                                    changes_text=f"Added user {user.username} to company.")
         return Response(status=status.HTTP_201_CREATED)
 
     def destroy(self, request, pk=None, company_pk=None):
@@ -141,6 +190,8 @@ class CompanyUserViewSet(
             membership.delete()
         except CompanyMembership.DoesNotExist:
             raise NotFound("User is not a member of this company.")
+        LogEntry.objects.log_create(instance=self.get_parent_company(), force_log=True, action=LogEntry.Action.DELETE,
+                                    changes_text=f"Removed user {user.username} from company.")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 @extend_schema_view(

@@ -79,6 +79,8 @@ class ProductBoMLineItem(models.Model):
 
     @property
     def product_sharing_request_status(self) -> ProductSharingRequestStatus:
+        if self.line_item_product.supplier.auto_approve_product_sharing_requests:
+            return ProductSharingRequestStatus.ACCEPTED
         if self.line_item_product.supplier == self.parent_product.supplier:
             return ProductSharingRequestStatus.ACCEPTED
         psr = self.product_sharing_request

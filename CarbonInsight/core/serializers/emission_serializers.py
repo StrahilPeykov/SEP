@@ -1,11 +1,11 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
-from core.models import TransportEmission, EmissionOverrideFactor, MaterialEmission, UserEnergyEmission, \
-    ProductionEnergyEmission, ProductBoMLineItem, TransportEmissionReference, MaterialEmissionReference, \
+from core.models import TransportEmission, EmissionOverrideFactor, UserEnergyEmission, \
+    ProductionEnergyEmission, ProductBoMLineItem, TransportEmissionReference, \
     UserEnergyEmissionReference, ProductionEnergyEmissionReference
 from core.serializers.reference_serializers import ProductionEnergyEmissionReferenceSerializer, \
-    TransportEmissionReferenceSerializer, UserEnergyEmissionReferenceSerializer, MaterialEmissionReferenceSerializer
+    TransportEmissionReferenceSerializer, UserEnergyEmissionReferenceSerializer
 
 
 class EmissionOverrideFactorSerializer(serializers.ModelSerializer):
@@ -29,20 +29,6 @@ class TransportEmissionSerializer(WritableNestedModelSerializer):
     class Meta:
         model = TransportEmission
         fields = ("id", "distance", "weight", "reference", "reference_details", "override_factors", "line_items")
-
-class MaterialEmissionSerializer(WritableNestedModelSerializer):
-    override_factors = EmissionOverrideFactorSerializer(many=True, required=False)
-    line_items = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=ProductBoMLineItem.objects.all(),
-        required=False,     # Not required on create/update
-        default=list        # If omitted, validated_data.get('line_items') = []
-    )
-    reference_details = MaterialEmissionReferenceSerializer(read_only=True, source="reference")
-
-    class Meta:
-        model = MaterialEmission
-        fields = ("id", "weight", "reference", "reference_details", "override_factors", "line_items")
 
 class UserEnergyEmissionSerializer(WritableNestedModelSerializer):
     override_factors = EmissionOverrideFactorSerializer(many=True, required=False)

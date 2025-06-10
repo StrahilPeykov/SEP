@@ -1,14 +1,14 @@
 from rest_framework.generics import get_object_or_404
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-from rest_framework import viewsets
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes, inline_serializer
+from rest_framework import viewsets, serializers, status # Added serializers here
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from core.models import Product, ProductBoMLineItem, Company
 from core.permissions import ProductSubAPIPermission
 from core.serializers.product_bom_line_item_serializer import ProductBoMLineItemSerializer
 from core.views.mixins.company_mixin import CompanyMixin
 from core.views.mixins.product_mixin import ProductMixin
-
 
 @extend_schema(
     parameters=[
@@ -51,12 +51,24 @@ from core.views.mixins.product_mixin import ProductMixin
     update=extend_schema(
         tags=["Product BoM line items"],
         summary="Update a BoM line item for a product",
-        description="Update a specific BoM line item for a product. "
+        description="Update a specific BoM line item for a product. ",
+        request=inline_serializer(
+            name='QuantityRequest',
+            fields={
+                'quantity': serializers.IntegerField()
+            }
+        ),
     ),
     partial_update=extend_schema(
         tags=["Product BoM line items"],
         summary="Partially update a BoM line item for a product",
-        description="Partially update a specific BoM line item for a product. "
+        description="Partially update a specific BoM line item for a product. ",
+        request=inline_serializer(
+            name='QuantityRequest',
+            fields={
+                'quantity': serializers.IntegerField()
+            }
+        ),
     ),
     destroy=extend_schema(
         tags=["Product BoM line items"],
@@ -69,14 +81,13 @@ class ProductBoMLineItemViewSet(
     ProductMixin,
     viewsets.ModelViewSet
 ):
-    queryset = ProductBoMLineItem.objects.none()  # Set to none to force overriding get_queryset
+    queryset = ProductBoMLineItem.objects.none()
     serializer_class = ProductBoMLineItemSerializer
     permission_classes = [IsAuthenticated, ProductSubAPIPermission]
 
     def get_queryset(self):
         product = self.get_parent_product()
-        qs = ProductBoMLineItem.objects.filter(parent_product=product)
-        return qs
+        return ProductBoMLineItem.objects.filter(parent_product=product)
 
     def perform_create(self, serializer):
         product = self.get_parent_product()

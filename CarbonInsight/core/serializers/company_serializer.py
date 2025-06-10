@@ -14,4 +14,4 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ("id", "name", "vat_number", "business_registration_number")
+        fields = ("id", "name", "vat_number", "business_registration_number", "auto_approve_product_sharing_requests")

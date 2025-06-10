@@ -68,6 +68,15 @@ from core.views.mixins.product_mixin import ProductMixin
                 "Export all this product's transport emissions to CSV format. "
                 "The CSV file will be returned as a downloadable attachment."
         ),
+        parameters=[
+            OpenApiParameter(
+                name="template",
+                type=OpenApiTypes.BOOL,
+                location="query",
+                description="If true, return only the header row as an empty template.",
+                required=False,
+            ),
+        ],
         responses={
             (200, 'text/csv'): OpenApiTypes.STR,
         }
@@ -79,6 +88,15 @@ from core.views.mixins.product_mixin import ProductMixin
                 "Export all this product's transport emissions to XLSX format. "
                 "The CSV file will be returned as a downloadable attachment."
         ),
+        parameters=[
+            OpenApiParameter(
+                name="template",
+                type=OpenApiTypes.BOOL,
+                location="query",
+                description="If true, return only the header row as an empty template.",
+                required=False,
+            ),
+        ],
         responses={
             (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
         }

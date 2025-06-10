@@ -2,8 +2,8 @@ from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
 from rapidfuzz import fuzz, process
 
-from core.models import Product, Emission, TransportEmission, TransportEmissionReference, UserEnergyEmission, \
-    ProductionEnergyEmission, MaterialEmission
+from core.models import Emission, TransportEmission, TransportEmissionReference, UserEnergyEmission, \
+    ProductionEnergyEmission
 
 
 def lookup_pk(queryset, raw_name, name_attr='name', pk_attr='pk', cutoff=75):
@@ -92,11 +92,5 @@ class UserEnergyEmissionResource(EmissionResource):
 class ProductionEnergyEmissionResource(EmissionResource):
     class Meta:
         model = ProductionEnergyEmission
-        exclude = EmissionResource.Meta.exclude
-        import_id_fields = EmissionResource.Meta.import_id_fields
-
-class MaterialEmissionResource(EmissionResource):
-    class Meta:
-        model = MaterialEmission
         exclude = EmissionResource.Meta.exclude
         import_id_fields = EmissionResource.Meta.import_id_fields

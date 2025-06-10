@@ -1,5 +1,4 @@
 from django.contrib import admin
-from reversion.admin import VersionAdmin
 
 from core.models import ProductionEnergyEmissionReference, ProductionEnergyEmissionReferenceFactor
 
@@ -10,7 +9,7 @@ class ProductionEnergyEmissionReferenceFactorInline(admin.TabularInline):
     extra = 0
 
 @admin.register(ProductionEnergyEmissionReference)
-class ProductionEnergyReferenceEmissionAdmin(VersionAdmin):
+class ProductionEnergyReferenceEmissionAdmin(admin.ModelAdmin):
     list_display = ("name", "get_emission_total", "get_emission_trace",
                     "get_emission_total_non_biogenic", "get_emission_total_biogenic")
     search_fields = ("name",)

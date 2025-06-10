@@ -14,6 +14,7 @@ from .product_sharing_request import ProductSharingRequest, ProductSharingReques
 from .reference_impact_unit import ReferenceImpactUnit
 from ..exporters.aas import product_to_aas_aasx, product_to_aas_json, product_to_aas_xml
 from ..exporters.scsn import product_to_scsn_full_xml, product_to_scsn_pcf_xml
+from ..exporters.zip import product_to_zip
 
 if TYPE_CHECKING:
     from .company import Company
@@ -149,11 +150,18 @@ class Product(models.Model):
         # If so, replace the emission trace with the overridden values
         if self.override_factors.exists():
             root.emissions_subtotal.clear()
-            root.methodology = "User-provided values"
-            root.mentions.append(EmissionTraceMention(
-                mention_class=EmissionTraceMentionClass.WARNING,
-                message="Emission factors are overridden by user-provided values"
-            ))
+            if self.supplier.is_reference:
+                root.methodology = "Database lookup"
+                root.mentions.append(EmissionTraceMention(
+                    mention_class=EmissionTraceMentionClass.INFORMATION,
+                    message="Estimated values"
+                ))
+            else:
+                root.methodology = "User-provided values"
+                root.mentions.append(EmissionTraceMention(
+                    mention_class=EmissionTraceMentionClass.WARNING,
+                    message="Emission factors are overridden by user-provided values"
+                ))
             for factor in self.override_factors.all():
                 root.emissions_subtotal[LifecycleStage(factor.lifecycle_stage)] = EmissionSplit(
                     biogenic=factor.co_2_emission_factor_biogenic,
@@ -175,12 +183,13 @@ class Product(models.Model):
     export_to_aas_json = product_to_aas_json
     export_to_scsn_full_xml = product_to_scsn_full_xml
     export_to_scsn_pcf_xml = product_to_scsn_pcf_xml
+    export_to_zip = product_to_zip
 
     def __str__(self):
         return self.name
 
 class ProductEmissionOverrideFactor(models.Model):
-    emission = models.ForeignKey(
+    product = models.ForeignKey(
         "Product",
         on_delete=models.CASCADE,
         related_name="override_factors",

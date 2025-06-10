@@ -40,6 +40,7 @@ class CompanyAPITests(APITestCase):
         self.assertFalse(Company.objects.filter(name="New Company").exists())
         
     def test_create_company_authenticated(self):
+        current_company_count = Company.objects.count()
         url = reverse("company-list")
         data = {
             "name": "New Company",
@@ -48,7 +49,7 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Company.objects.count(), 3)
+        self.assertEqual(Company.objects.count(), current_company_count+1)
         self.assertEqual(Company.objects.get(id=response.data["id"]).name, "New Company")
         self.assertTrue(Company.objects.filter(name="New Company").exists())
         self.assertTrue(CompanyMembership.objects.filter(user=self.red_company_user1, company__name="New Company").exists())
@@ -184,17 +185,19 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_company_authenticated_authorized(self):
+        company_count = Company.objects.count()
         url = reverse("company-detail", args=[self.red_company.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Company.objects.count(), 1)
+        self.assertEqual(Company.objects.count(), company_count-1)
         self.assertFalse(Company.objects.filter(id=self.red_company.id).exists())
 
     def test_delete_company_authenticated_unauthorized(self):
+        company_count = Company.objects.count()
         url = reverse("company-detail", args=[self.green_company.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(Company.objects.count(), 2)
+        self.assertEqual(Company.objects.count(), company_count)
         self.assertTrue(Company.objects.filter(id=self.green_company.id).exists())
 
     def test_list_companies_my(self):
@@ -216,6 +219,7 @@ class CompanyAPITests(APITestCase):
         self.assertNotIn("Blue company BV", company_list)
 
     def test_create_company_authenticated_duplicate_company(self):
+        company_count = Company.objects.count()
         url = reverse("company-list")
         data = {
             "name": "Red company BV",
@@ -224,4 +228,4 @@ class CompanyAPITests(APITestCase):
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Company.objects.count(), 2)
+        self.assertEqual(Company.objects.count(), company_count)

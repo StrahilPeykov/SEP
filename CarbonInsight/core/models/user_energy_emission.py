@@ -23,18 +23,16 @@ class UserEnergyEmission(Emission):
 
     def _get_emission_trace(self) -> EmissionTrace:
         if self.reference is None:
-            reference_emission_trace = EmissionTrace(
+            reference_multiplied_factor = EmissionTrace(
                 label="User energy consumption emission",
                 reference_impact_unit=ReferenceImpactUnit.KILOWATT_HOUR,
                 related_object=self,
             )
         else:
-            reference_emission_trace = self.reference.get_emission_trace()
-
-        # Multiply by the factor
-        reference_multiplied_factor = reference_emission_trace * self.energy_consumption
-        reference_multiplied_factor.label = f"User energy consumption emission"
-        reference_multiplied_factor.methodology = f"{self.energy_consumption}kWh * {self.reference.name}"
+            # Multiply by the factor
+            reference_multiplied_factor = self.reference.get_emission_trace() * self.energy_consumption
+            reference_multiplied_factor.label = f"User energy consumption emission"
+            reference_multiplied_factor.methodology = f"{self.energy_consumption}kWh * {self.reference.name}"
 
         return reference_multiplied_factor
 

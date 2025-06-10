@@ -26,7 +26,12 @@ class EmissionImportExportMixin:
 
     @action(detail=False, methods=["get"],url_path="export/csv")
     def export_csv(self:T, request, *args, **kwargs):
-        dataset = self.emission_import_export_resource().export(queryset=self.get_queryset())
+        # Check if template is requested
+        if request.query_params.get("template", "false").lower() == "true":
+            queryset = self.get_queryset()[:0]  # Empty queryset for template
+        else:
+            queryset = self.get_queryset()
+        dataset = self.emission_import_export_resource().export(queryset=queryset)
         csv_bytes = dataset.csv.encode("utf-8")
         file_io = BytesIO(csv_bytes)
 
@@ -39,7 +44,12 @@ class EmissionImportExportMixin:
 
     @action(detail=False, methods=["get"],url_path="export/xlsx")
     def export_xlsx(self:T, request, *args, **kwargs):
-        dataset = self.emission_import_export_resource().export(queryset=self.get_queryset())
+        # Check if template is requested
+        if request.query_params.get("template", "false").lower() == "true":
+            queryset = self.get_queryset()[:0]  # Empty queryset for template
+        else:
+            queryset = self.get_queryset()
+        dataset = self.emission_import_export_resource().export(queryset=queryset)
         result = dataset.export(format="xlsx")
         file_io = BytesIO(result)
 

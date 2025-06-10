@@ -82,8 +82,7 @@ class EmissionTrace:
         from core.models import (Product, Emission,
                                  UserEnergyEmission, UserEnergyEmissionReference,
                                  TransportEmission, TransportEmissionReference,
-                                 ProductionEnergyEmission, ProductionEnergyEmissionReference,
-                                 MaterialEmission, MaterialEmissionReference)  # Import here to avoid circular import
+                                 ProductionEnergyEmission, ProductionEnergyEmissionReference)  # Import here to avoid circular import
         if isinstance(self.related_object, Product):
             return "Product"
         elif isinstance(self.related_object, TransportEmissionReference):
@@ -92,16 +91,12 @@ class EmissionTrace:
             return "UserEnergyEmissionReference"
         elif isinstance(self.related_object, ProductionEnergyEmissionReference):
             return "ProductionEnergyEmissionReference"
-        elif isinstance(self.related_object, MaterialEmissionReference):
-            return "MaterialEmissionReference"
         elif isinstance(self.related_object, TransportEmission):
             return "TransportEmission"
         elif isinstance(self.related_object, UserEnergyEmission):
             return "UserEnergyEmission"
         elif isinstance(self.related_object, ProductionEnergyEmission):
             return "ProductionEnergyEmission"
-        elif isinstance(self.related_object, MaterialEmission):
-            return "MaterialEmission"
         elif isinstance(self.related_object, Emission):
             return "Emission"
         else:

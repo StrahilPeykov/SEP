@@ -4,7 +4,7 @@ from django.urls import reverse
 from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import serializers
 from core.models import ProductBoMLineItem, ProductSharingRequestStatus, Product, Emission, TransportEmission, \
-    MaterialEmission, UserEnergyEmission, ProductionEnergyEmission
+    UserEnergyEmission, ProductionEnergyEmission
 from core.serializers.product_serializer import ProductSerializer
 
 class EmissionBoMSerializer(serializers.ModelSerializer):
@@ -30,8 +30,6 @@ class EmissionBoMSerializer(serializers.ModelSerializer):
         kwargs = {"company_pk": company_pk, "product_pk": product_pk, "pk": obj.id}
         if obj.get_real_instance_class() == TransportEmission:
             return reverse("product-transport-emissions-detail", kwargs=kwargs)
-        elif obj.get_real_instance_class() == MaterialEmission:
-            return reverse("product-material-emissions-detail", kwargs=kwargs)
         elif obj.get_real_instance_class() == UserEnergyEmission:
             return reverse("product-user-energy-emissions-detail", kwargs=kwargs)
         elif obj.get_real_instance_class() == ProductionEnergyEmission:
@@ -47,13 +45,14 @@ class ProductBoMLineItemSerializer(serializers.ModelSerializer):
     line_item_product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(),
         source='line_item_product',
-        write_only=True
+        write_only=True,
+        required=False
     )
 
     class Meta:
         model = ProductBoMLineItem
         fields = ("id", "quantity", "line_item_product", "line_item_product_id", "parent_product", "product_sharing_request_status", "emissions")
-        read_only_fields = ("parent_product", "line_item_product")
+        read_only_fields = ("parent_product", "line_item_product", "line_item_product_id")
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=ProductBoMLineItem.objects.all(),
@@ -71,3 +70,13 @@ class ProductBoMLineItemSerializer(serializers.ModelSerializer):
         # now inject product from the URL
         validated["parent_product"] = self.context["view"].get_parent_product()
         return validated
+
+    def create(self, validated_data):
+        if 'line_item_product' not in validated_data:
+            raise serializers.ValidationError({"line_item_product_id": "This field is required for creation."})
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if 'line_item_product' in validated_data:
+            raise serializers.ValidationError({"line_item_product_id": "This field cannot be updated after creation."})
+        return super().update(instance, validated_data)

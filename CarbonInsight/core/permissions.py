@@ -2,6 +2,7 @@ from rest_framework import permissions
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from core.models import Company
+from core.views.mixins.company_mixin import resolve_company_pk
 
 
 class IsCompanyMember(BasePermission):
@@ -20,7 +21,7 @@ class IsCompanyMember(BasePermission):
             return False
 
         try:
-            company = Company.objects.get(pk=company_pk)
+            company = Company.objects.get(pk=resolve_company_pk(company_pk))
         except Company.DoesNotExist:
             return False
 

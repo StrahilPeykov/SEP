@@ -1,5 +1,4 @@
 from django.contrib import admin
-from reversion.admin import VersionAdmin
 
 from core.models import TransportEmissionReference, TransportEmissionReferenceFactor
 
@@ -10,7 +9,7 @@ class TransportEmissionReferenceFactorInline(admin.TabularInline):
     extra = 0
 
 @admin.register(TransportEmissionReference)
-class TransportReferenceEmissionAdmin(VersionAdmin):
+class TransportReferenceEmissionAdmin(admin.ModelAdmin):
     list_display = ("name", "get_emission_total", "get_emission_trace",
                     "get_emission_total_non_biogenic", "get_emission_total_biogenic")
     search_fields = ("name",)

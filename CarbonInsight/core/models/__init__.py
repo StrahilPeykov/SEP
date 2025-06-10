@@ -1,10 +1,9 @@
-import reversion
+from auditlog.registry import auditlog
 
 from .emission import Emission, EmissionOverrideFactor
 from .emission_bom_link import EmissionBoMLink
 from .company import Company
 from .company_membership import CompanyMembership
-from .material_emission import MaterialEmission, MaterialEmissionReference, MaterialEmissionReferenceFactor
 from .product import Product
 from .product_bom_line_item import ProductBoMLineItem
 from .product_sharing_request import ProductSharingRequest, ProductSharingRequestStatus
@@ -15,22 +14,19 @@ from .user_energy_emission import UserEnergyEmission, UserEnergyEmissionReferenc
 from .ai_conversation_log import AIConversationLog
 from .lifecycle_stage import LifecycleStage
 
-reversion.register(Emission)
-reversion.register(Company)
-reversion.register(CompanyMembership)
-reversion.register(MaterialEmission)
-reversion.register(MaterialEmissionReference)
-reversion.register(MaterialEmissionReferenceFactor)
-reversion.register(Product)
-reversion.register(ProductBoMLineItem)
-reversion.register(ProductSharingRequest)
-reversion.register(ProductionEnergyEmission)
-reversion.register(ProductionEnergyEmissionReference)
-reversion.register(ProductionEnergyEmissionReferenceFactor)
-reversion.register(TransportEmission)
-reversion.register(TransportEmissionReference)
-reversion.register(TransportEmissionReferenceFactor)
-#reversion.register(User)
-reversion.register(UserEnergyEmission)
-reversion.register(UserEnergyEmissionReference)
-reversion.register(UserEnergyEmissionReferenceFactor)
+#auditlog.register(Emission)
+auditlog.register(Company)
+#auditlog.register(CompanyMembership)
+auditlog.register(Product)
+#auditlog.register(ProductBoMLineItem)
+#auditlog.register(ProductSharingRequest)
+auditlog.register(ProductionEnergyEmission)
+#auditlog.register(ProductionEnergyEmissionReference)
+#auditlog.register(ProductionEnergyEmissionReferenceFactor)
+auditlog.register(TransportEmission)
+#auditlog.register(TransportEmissionReference)
+#auditlog.register(TransportEmissionReferenceFactor)
+#auditlog.register(User)
+auditlog.register(UserEnergyEmission)
+#auditlog.register(UserEnergyEmissionReference)
+#auditlog.register(UserEnergyEmissionReferenceFactor)

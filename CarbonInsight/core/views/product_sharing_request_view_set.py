@@ -1,3 +1,4 @@
+from auditlog.models import LogEntry
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import viewsets, mixins, status
@@ -74,6 +75,9 @@ class ProductSharingRequestViewSet(
     def bulk_approve(self, request, company_pk=None):
         qs = self.get_queryset().filter(id__in=request.data.get("ids"))
         updated = qs.update(status=ProductSharingRequestStatus.ACCEPTED)
+        for psr in qs:
+            LogEntry.objects.log_create(instance=self.get_parent_company(), force_log=True, action=LogEntry.Action.UPDATE,
+                                        changes_text=f"Approved product emissions sharing request for product {psr.product.name} from {psr.product.supplier.name}.")
         return Response({"updated": updated}, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -86,4 +90,7 @@ class ProductSharingRequestViewSet(
     def bulk_deny(self, request, company_pk=None):
         qs = self.get_queryset().filter(id__in=request.data.get("ids"))
         updated = qs.update(status=ProductSharingRequestStatus.REJECTED)
+        for psr in qs:
+            LogEntry.objects.log_create(instance=self.get_parent_company(), force_log=True, action=LogEntry.Action.UPDATE,
+                                        changes_text=f"Denied product emissions sharing request for product {psr.product.name} from {psr.product.supplier.name}.")
         return Response({"updated": updated}, status=status.HTTP_200_OK)

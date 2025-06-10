@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "django_admin_listfilter_dropdown",
     "django_countries",
     "polymorphic",
-    "reversion",
+    "auditlog",
     "axes",
     "core",
 ]
@@ -69,6 +69,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+
+    "core.middleware.AuditlogMiddleware",
 
     # AxesMiddleware should be the last middleware in the MIDDLEWARE list.
     # It only formats user lockout messages and renders Axes lockout responses

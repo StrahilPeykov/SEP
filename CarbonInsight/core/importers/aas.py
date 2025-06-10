@@ -10,8 +10,9 @@ from basyx.aas.model import DictObjectStore, Property, MultiLanguageProperty, Su
 from aas_test_engines.file import *
 from rest_framework.exceptions import ValidationError
 
+from core.importers.aas_validators import validate_aas_xml, validate_aas_json, validate_aas_aasx
 from core.models import Product, Company, Emission, LifecycleStage, TransportEmission, UserEnergyEmission, \
-    ProductionEnergyEmission, MaterialEmission, EmissionOverrideFactor
+    ProductionEnergyEmission, EmissionOverrideFactor
 from core.models.pcf_calculation_method import PcfCalculationMethod
 from core.models.reference_impact_unit import ReferenceImpactUnit
 
@@ -176,22 +177,3 @@ def get_error_critical_messages(result: AasTestResult) -> list[str]:
         errors.extend(get_error_critical_messages(sub_result))
     return errors
 
-def validate_aas_aasx(file:BytesIO, silent:bool=False) -> bool:
-    result = check_aasx_file(BytesIO(file.getvalue()))  # I KNOW THIS IS A TYPING ISSUE, BUT USING TEXTIO CRASHES THE CHECKER
-    if not silent and not result.ok():
-        raise ValidationError({"file":f"AAS AASX file is not valid: \n"+'\n'.join(get_error_critical_messages(result))})
-    return result.ok()
-
-def validate_aas_json(file:BytesIO, silent:bool=False) -> bool:
-    text_io = TextIOWrapper(BytesIO(file.getvalue()))
-    result = check_json_file(text_io)
-    if not silent and not result.ok():
-        raise ValidationError({"file":f"AAS JSON file is not valid: \n"+'\n'.join(get_error_critical_messages(result))})
-    return result.ok()
-
-def validate_aas_xml(file:BytesIO, silent:bool=False) -> bool:
-    text_io = TextIOWrapper(BytesIO(file.getvalue()))
-    result = check_xml_file(text_io)
-    if not silent and not result.ok():
-        raise ValidationError({"file":f"AAS XML file is not valid: \n"+'\n'.join(get_error_critical_messages(result))})
-    return result.ok()

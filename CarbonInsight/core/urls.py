@@ -20,7 +20,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
 from core.views import *
-from core.views.material_emission_view_set import MaterialEmissionViewSet
+from core.views.audit_log_view_set import AuditLogViewSet
 from core.views.product_bom_line_item_view_set import ProductBoMLineItemViewSet
 from core.views.company_view_set import MyCompaniesViewSet
 from core.views.company_view_set import CompanyUserViewSet
@@ -35,7 +35,7 @@ router.register(r"companies", CompanyViewSet)
 router.register(r"reference/transport", TransportEmissionReferenceViewSet, basename="transport-reference")
 router.register(r"reference/user_energy", UserEnergyEmissionReferenceViewSet, basename="user-energy-reference")
 router.register(r"reference/production_energy", ProductionEnergyEmissionReferenceViewSet, basename="production-energy-reference")
-router.register(r"reference/material", MaterialEmissionReferenceViewSet, basename="material-reference")
+#router.register(r"audit", AuditLogViewSet, basename="audit")
 
 company_router = NestedDefaultRouter(router, r"companies", lookup="company")
 company_router.register(r"products", ProductViewSet)
@@ -51,7 +51,6 @@ product_router.register(r"bom", ProductBoMLineItemViewSet, basename="product-bom
 product_router.register(r"emissions/transport", TransportEmissionViewSet, basename="product-transport-emissions")
 product_router.register(r"emissions/user_energy", UserEnergyEmissionViewSet, basename="product-user-energy-emissions")
 product_router.register(r"emissions/production_energy", ProductionEnergyEmissionViewSet, basename="product-production-energy-emissions")
-product_router.register(r"emissions/material", MaterialEmissionViewSet, basename="product-material-emissions")
 
 urlpatterns = [
     path("api/", include(router.urls)),

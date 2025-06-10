@@ -3,10 +3,10 @@ from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
 
 from core.models.transport_emission import TransportEmissionReference
-from core.serializers.reference_serializers import MaterialEmissionReferenceSerializer, \
+from core.serializers.reference_serializers import \
     ProductionEnergyEmissionReferenceSerializer, \
     UserEnergyEmissionReferenceSerializer, TransportEmissionReferenceSerializer
-from core.models import UserEnergyEmissionReference, ProductionEnergyEmissionReference, MaterialEmissionReference
+from core.models import UserEnergyEmissionReference, ProductionEnergyEmissionReference
 
 @extend_schema_view(
     list=extend_schema(
@@ -57,22 +57,5 @@ class UserEnergyEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
 class ProductionEnergyEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ProductionEnergyEmissionReference.objects.all()
     serializer_class = ProductionEnergyEmissionReferenceSerializer
-    permission_classes = [IsAuthenticated]
-
-@extend_schema_view(
-    list=extend_schema(
-        tags=["Reference"],
-        summary="Retrieve all material emission references",
-        description="Retrieve a list of all material emission references.",
-    ),
-    retrieve=extend_schema(
-        tags=["Reference"],
-        summary="Retrieve a specific material emission reference",
-        description="Retrieve the details of a specific material emission reference by its ID.",
-    ),
-)
-class MaterialEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = MaterialEmissionReference.objects.all()
-    serializer_class = MaterialEmissionReferenceSerializer
     permission_classes = [IsAuthenticated]
 

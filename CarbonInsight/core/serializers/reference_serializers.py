@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from core.models import (UserEnergyEmissionReference, ProductionEnergyEmissionReference,
-                         MaterialEmissionReference, TransportEmissionReference, MaterialEmissionReferenceFactor,
+                         TransportEmissionReference,
                          ProductionEnergyEmissionReferenceFactor, UserEnergyEmissionReferenceFactor,
                          TransportEmissionReferenceFactor)
 from core.models.lifecycle_stage import LifecycleStage
@@ -40,16 +40,4 @@ class ProductionEnergyEmissionReferenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductionEnergyEmissionReference
-        fields = ("id", "name", "emission_factors")
-
-class MaterialEmissionReferenceFactorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MaterialEmissionReferenceFactor
-        fields = ("id", "lifecycle_stage", "co_2_emission_factor_biogenic", "co_2_emission_factor_non_biogenic")
-
-class MaterialEmissionReferenceSerializer(serializers.ModelSerializer):
-    emission_factors = MaterialEmissionReferenceFactorSerializer(many=True, source="reference_factors")
-
-    class Meta:
-        model = MaterialEmissionReference
         fields = ("id", "name", "emission_factors")

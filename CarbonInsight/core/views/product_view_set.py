@@ -1,35 +1,37 @@
 from io import BytesIO
 
+from auditlog.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
+from django.db.models import Q
 from django.http import FileResponse
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, inline_serializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.utils import inline_serializer
 from import_export.results import RowResult
 from rest_framework import viewsets, status, serializers
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied, UnsupportedMediaType
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import get_object_or_404
-from rest_framework.parsers import FileUploadParser, MultiPartParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from tablib import Dataset
 
 from core.importers.aas import aas_aasx_to_db, aas_json_to_db, aas_xml_to_db
-from core.models import Product, Company
+from core.importers.aas_validators import validate_aas_aasx, validate_aas_json, validate_aas_xml
+from core.models import Product, Company, TransportEmission, UserEnergyEmission, ProductionEnergyEmission
 from core.models.ai_conversation_log import AIConversationLog
 from core.permissions import ProductPermission
 from core.resources.product_resource import ProductResource
 from core.serializers.ai_conversation_log_serializer import AIConversationLogSerializer
+from core.serializers.audit_log_entry_serializer import AuditLogEntrySerializer
 from core.serializers.emission_trace_serializer import EmissionTraceSerializer
 from core.serializers.product_serializer import ProductSerializer
 from core.serializers.product_sharing_request_serializer import ProductSharingRequestRequestAccessSerializer
 from core.services.ai_service import generate_ai_response
 from core.views.mixins.company_mixin import CompanyMixin
-
-from core.importers.aas import validate_aas_aasx, validate_aas_json, validate_aas_xml
 
 
 @extend_schema(
@@ -98,6 +100,8 @@ class ProductViewSet(
             return EmissionTraceSerializer
         if self.action in ["ai"]:
             return AIConversationLogSerializer
+        if self.action in ["audit"]:
+            return AuditLogEntrySerializer
         return super().get_serializer_class()
 
     def get_queryset(self):
@@ -138,6 +142,8 @@ class ProductViewSet(
                 requester=requester,
                 user=user,
             )
+            LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.UPDATE,
+                                        changes_text=f"Requested access to product {product.name} emissions")
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
             raise ValidationError(str(e))
@@ -175,6 +181,7 @@ class ProductViewSet(
         product = self.get_object()
         file = product.export_to_aas_aasx()
         validate_aas_aasx(file)
+        LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to AAS AASX format")
         return FileResponse(
             file,
             as_attachment=True,
@@ -201,6 +208,7 @@ class ProductViewSet(
         product = self.get_object()
         file = product.export_to_aas_xml()
         validate_aas_xml(file)
+        LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to AAS XML format")
         return FileResponse(
             file,
             as_attachment=True,
@@ -227,6 +235,7 @@ class ProductViewSet(
         product = self.get_object()
         file = product.export_to_aas_json()
         validate_aas_json(file)
+        LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to AAS JSON format")
         return FileResponse(
             file,
             as_attachment=True,
@@ -253,6 +262,7 @@ class ProductViewSet(
     def export_scsn_pcf_xml(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_scsn_pcf_xml()
+        LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to SCSN XML format (partial)")
         return FileResponse(
             file,
             as_attachment=True,
@@ -278,11 +288,38 @@ class ProductViewSet(
     def export_scsn_full_xml(self, request, *args, **kwargs):
         product = self.get_object()
         file = product.export_to_scsn_full_xml()
+        LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to SCSN XML format (full)")
         return FileResponse(
             file,
             as_attachment=True,
             filename=f"{product.name}_scsn_full.xml",
             content_type="application/xml",
+        )
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Export product to ZIP",
+        description=(
+                "Export the product's data as a ZIP archive of all other exporters. "
+                "The ZIP file will be returned as a downloadable attachment."
+        ),
+        responses={
+            (200, 'application/zip'): OpenApiTypes.BINARY,
+        }
+    )
+    @action(detail=True, methods=["get"],
+            permission_classes=[IsAuthenticated, ProductPermission],
+            url_path="export/zip")
+    def export_zip(self, request, *args, **kwargs):
+        product = self.get_object()
+        file = product.export_to_zip()
+        LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS,
+                                    changes_text="Exported to ZIP")
+        return FileResponse(
+            file,
+            as_attachment=True,
+            filename=f"{product.name}.zip",
+            content_type="application/zip",
         )
 
     @extend_schema(
@@ -412,6 +449,15 @@ class ProductViewSet(
             "Export all this company's products to CSV format. "
             "The CSV file will be returned as a downloadable attachment."
         ),
+        parameters=[
+            OpenApiParameter(
+                name="template",
+                type=OpenApiTypes.BOOL,
+                location="query",
+                description="If true, return only the header row as an empty template.",
+                required=False,
+            ),
+        ],
         responses={
             (200, 'text/csv'): OpenApiTypes.STR,
         }
@@ -420,10 +466,15 @@ class ProductViewSet(
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/csv")
     def export_csv(self, request, *args, **kwargs):
-        dataset = ProductResource().export(queryset=self.get_queryset())
+        # Check if template is requested
+        if request.query_params.get("template", "false").lower() == "true":
+            queryset = self.get_queryset()[:0]  # Empty queryset for template
+        else:
+            queryset = self.get_queryset()
+        dataset = ProductResource().export(queryset=queryset)
         csv_bytes = dataset.csv.encode("utf-8")
         file_io = BytesIO(csv_bytes)
-
+        LogEntry.objects.log_create(instance=self.get_parent_company(), force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to CSV format")
         return FileResponse(
             file_io,
             as_attachment=True,
@@ -438,6 +489,15 @@ class ProductViewSet(
                 "Export all this company's products to XLSX format. "
                 "The XLSX file will be returned as a downloadable attachment."
         ),
+        parameters=[
+            OpenApiParameter(
+                name="template",
+                type=OpenApiTypes.BOOL,
+                location="query",
+                description="If true, return only the header row as an empty template.",
+                required=False,
+            ),
+        ],
         responses={
             (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
         }
@@ -446,10 +506,15 @@ class ProductViewSet(
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/xlsx")
     def export_xlsx(self, request, *args, **kwargs):
-        dataset = ProductResource().export(queryset=self.get_queryset())
+        # Check if template is requested
+        if request.query_params.get("template", "false").lower() == "true":
+            queryset = self.get_queryset()[:0]  # Empty queryset for template
+        else:
+            queryset = self.get_queryset()
+        dataset = ProductResource().export(queryset=queryset)
         result = dataset.export(format="xlsx")
         file_io = BytesIO(result)
-
+        LogEntry.objects.log_create(instance=self.get_parent_company(), force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to XLSX format")
         return FileResponse(
             file_io,
             as_attachment=True,
@@ -569,4 +634,43 @@ class ProductViewSet(
             response=ai_response,
         )
         serializer = self.get_serializer(log)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=["Products"],
+        summary="Audit log for product",
+        description="Retrieve the audit log entries for a specific product, its BoM and its emissions.",
+        responses=AuditLogEntrySerializer(many=True),
+    )
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, ProductPermission], url_path="audit")
+    def audit(self, request, *args, **kwargs):
+        product = self.get_object()
+
+        # 1. Product itself
+        base_q = Q(
+            content_type=ContentType.objects.get_for_model(product),
+            object_pk__in=[product.pk],
+        )
+
+        # 2a. Transport emissions logs
+        base_q |= Q(
+            content_type=ContentType.objects.get_for_model(TransportEmission),
+            object_pk__in=TransportEmission.objects.filter(parent_product=product).values_list('pk', flat=True),
+        )
+
+        # 2b. User energy emissions logs
+        base_q |= Q(
+            content_type=ContentType.objects.get_for_model(UserEnergyEmission),
+            object_pk__in=UserEnergyEmission.objects.filter(parent_product=product).values_list('pk', flat=True),
+        )
+
+        # 2c. Production energy emissions logs
+        base_q |= Q(
+            content_type=ContentType.objects.get_for_model(ProductionEnergyEmission),
+            object_pk__in=ProductionEnergyEmission.objects.filter(parent_product=product).values_list('pk', flat=True),
+        )
+
+        logs = LogEntry.objects.filter(base_q).order_by("-timestamp")
+
+        serializer = self.get_serializer(logs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

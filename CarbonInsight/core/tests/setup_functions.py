@@ -1,11 +1,10 @@
 from django.urls import reverse
 from rest_framework import status
 from core.models import User, EmissionBoMLink, ProductBoMLineItem, Product, CompanyMembership, Company
-from core.models import UserEnergyEmission, ProductionEnergyEmission, TransportEmission,MaterialEmission
-from core.models import  UserEnergyEmissionReference, ProductionEnergyEmissionReference, TransportEmissionReference, \
-    MaterialEmissionReference
+from core.models import UserEnergyEmission, ProductionEnergyEmission, TransportEmission
+from core.models import  UserEnergyEmissionReference, ProductionEnergyEmissionReference, TransportEmissionReference
 from core.models import UserEnergyEmissionReferenceFactor, TransportEmissionReferenceFactor, \
-    MaterialEmissionReferenceFactor, ProductionEnergyEmissionReferenceFactor , LifecycleStage
+    ProductionEnergyEmissionReferenceFactor , LifecycleStage
 from core.models import ProductSharingRequestStatus, ProductSharingRequest
 from core.models.product import ProductEmissionOverrideFactor
 from core.models import EmissionOverrideFactor
@@ -34,6 +33,15 @@ def paint_companies_setup(self):
     self.assertEqual(resp.status_code, status.HTTP_200_OK)
     self.access_token = resp.data["access"]
     self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+
+    #Create reference company
+    self.references = Company.objects.create(
+        name = "Reference",
+        vat_number = "N/A",
+        business_registration_number="REFERENCE",
+        is_reference=True,
+        auto_approve_product_sharing_requests=True
+    )
 
     # Create an existing company
     self.red_company = Company.objects.create(
@@ -202,6 +210,15 @@ def tech_companies_setup(self):
     self.access_token = response.data["access"]
     self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
 
+    # Create reference company
+    self.references = Company.objects.create(
+        name="Reference",
+        vat_number="N/A",
+        business_registration_number="REFERENCE",
+        is_reference=True,
+        auto_approve_product_sharing_requests=True
+    )
+
     # Create test companies
     self.apple = Company.objects.create(
         name="Apple Inc.",
@@ -235,21 +252,46 @@ def tech_companies_setup(self):
     CompanyMembership.objects.create(user=corning_user_1, company=corning)
     CompanyMembership.objects.create(user=tsmc_user_1, company=self.tsmc)
 
-    # Add material emission references
-    self.glass_material = MaterialEmissionReference.objects.create(common_name="Glass")
-    MaterialEmissionReferenceFactor.objects.create(
-        emission_reference=self.glass_material,
+    #Reference products
+    self.glass_material = Product.objects.create(
+        name="Glass Reference",
+        description="Glass Reference",
+        supplier=self.references,
+        manufacturer_name="Reference",
+        manufacturer_country="AQ",
+        manufacturer_city="Anor Lando",
+        manufacturer_street="Nightmare of Mensis",
+        manufacturer_zip_code="#fc0a8b",
+        year_of_construction=2025,
+        family="Reference",
+        sku="N/A",
+    )
+    ProductEmissionOverrideFactor.objects.create(
+        product=self.glass_material,
         lifecycle_stage=LifecycleStage.A1,
         co_2_emission_factor_biogenic=0.5,
     )
-    self.silicon_material = MaterialEmissionReference.objects.create(common_name="Silicon")
-    MaterialEmissionReferenceFactor.objects.create(
-        emission_reference=self.silicon_material,
+
+    self.silicon_material = Product.objects.create(
+        name="Silicon Reference",
+        description="Silicon Reference",
+        supplier=self.references,
+        manufacturer_name="Reference",
+        manufacturer_country="EC",
+        manufacturer_city="Yharnam",
+        manufacturer_street="Curch of Yorshka",
+        manufacturer_zip_code="#09e80d",
+        year_of_construction=2025,
+        family="Reference",
+        sku="N/A",
+    )
+    ProductEmissionOverrideFactor.objects.create(
+        product=self.silicon_material,
         lifecycle_stage=LifecycleStage.A2,
         co_2_emission_factor_biogenic=0.3,
     )
-    MaterialEmissionReferenceFactor.objects.create(
-        emission_reference=self.silicon_material,
+    ProductEmissionOverrideFactor.objects.create(
+        product=self.silicon_material,
         lifecycle_stage=LifecycleStage.A1,
         co_2_emission_factor_biogenic=0.2,
     )
@@ -350,26 +392,26 @@ def tech_companies_setup(self):
         sku="0987654334"
     )
 
-    # Add product material emissions
-    self.processor_material_emission = MaterialEmission.objects.create(
+    # Add material references
+    self.processor_material_reference = ProductBoMLineItem.objects.create(
         parent_product=self.processor,
-        weight=0.5,
-        reference=self.silicon_material,
+        quantity=0.5,
+        line_item_product=self.silicon_material,
     )
-    self.processor_material_emission2 = MaterialEmission.objects.create(
+    self.processor_material_reference2 = ProductBoMLineItem.objects.create(
         parent_product=self.processor,
-        weight=0.5,
-        reference=self.glass_material,
+        quantity=0.5,
+        line_item_product=self.glass_material,
     )
-    self.camera_material_emission = MaterialEmission.objects.create(
+    self.camera_material_reference = ProductBoMLineItem.objects.create(
         parent_product=self.camera,
-        weight=0.2,
-        reference=self.glass_material,
+        quantity=0.2,
+        line_item_product=self.glass_material,
     )
-    self.display_material_emission = MaterialEmission.objects.create(
+    self.display_material_reference = ProductBoMLineItem.objects.create(
         parent_product=self.display,
-        weight=0.3,
-        reference=self.glass_material,
+        quantity=0.3,
+        line_item_product=self.glass_material,
     )
 
     # Add BoM items
@@ -451,7 +493,7 @@ def tech_companies_setup(self):
 
     # Add product emission override factors
     ProductEmissionOverrideFactor.objects.create(
-        emission=self.display,
+        product=self.display,
         lifecycle_stage=LifecycleStage.A1,
         co_2_emission_factor_biogenic=300,
     )

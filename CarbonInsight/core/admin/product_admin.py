@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
-from reversion.admin import VersionAdmin
 
 from core.models import Product, ProductSharingRequest, ProductBoMLineItem, Emission
 from core.models.product import ProductEmissionOverrideFactor
@@ -43,7 +42,7 @@ class ProductSharingRequestInline(admin.TabularInline):
     readonly_fields = ("created_at",)
 
 @admin.register(Product)
-class ProductAdmin(VersionAdmin):
+class ProductAdmin(admin.ModelAdmin):
     model = Product
     list_display = ("name", "supplier", "manufacturer_name", "sku", "is_public", "get_emission_total",
                     "get_emission_total_non_biogenic", "get_emission_total_biogenic")

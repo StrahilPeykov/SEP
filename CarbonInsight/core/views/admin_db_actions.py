@@ -9,8 +9,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from core.models import Company, CompanyMembership, MaterialEmission, MaterialEmissionReference, Product, \
-    ProductBoMLineItem, TransportEmission, TransportEmissionReference, Emission, MaterialEmissionReferenceFactor, \
+from core.models import Company, CompanyMembership, Product, \
+    ProductBoMLineItem, TransportEmission, TransportEmissionReference, Emission, \
     TransportEmissionReferenceFactor, EmissionBoMLink
 from core.models.lifecycle_stage import LifecycleStage
 
@@ -78,6 +78,7 @@ def populate_db(request):
     CompanyMembership.objects.create(user=tsmc_user_1, company=tsmc)
     CompanyMembership.objects.create(user=tsmc_user_2, company=tsmc)
 
+    """
     # Add raw materials
     glass_material = MaterialEmissionReference.objects.create(common_name="Glass")
     MaterialEmissionReferenceFactor.objects.create(
@@ -218,6 +219,7 @@ def populate_db(request):
         emission=iphone_line_display_transport,
         line_item=iphone_line_display,
     )
+    """
 
     # Log in as the admin user
     login(request, admin_user, backend="django.contrib.auth.backends.ModelBackend")
@@ -239,8 +241,6 @@ def destroy_db(request):
     ProductBoMLineItem.objects.all().delete()
     Product.objects.all().delete()
     Emission.objects.all().delete()
-    MaterialEmissionReference.objects.all().delete()
-    MaterialEmissionReferenceFactor.objects.all().delete()
     TransportEmissionReference.objects.all().delete()
     TransportEmissionReferenceFactor.objects.all().delete()
     CompanyMembership.objects.all().delete()

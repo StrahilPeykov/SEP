@@ -122,45 +122,50 @@ class UserProfileAPITests(APITestCase):
         self.client.credentials()
         url = reverse("user_profile")
 
-        response = self.client.put(url)
+        response = self.client.put(url, {"username": "1@redcompany.com", "email": "1@redcompany.com",
+                                         "first_name": "John2", "last_name": "Pork2"})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_update_personal_user_details_put_authenticated_unauthorized(self):
+    def test_update_personal_user_details_put_to_existing_username(self):
         url = reverse("user_profile")
 
-        response = self.client.put(url, {"username": "2@redcompany.com",
+        response = self.client.put(url, {"username": "2@redcompany.com", "email": "2@redcompany.com",
                                          "first_name": "John", "last_name": "Pork"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_update_personal_user_details_patch_authenticated_unauthorized(self):
+    def test_update_personal_user_details_patch_to_existing_username(self):
         url = reverse("user_profile")
 
         response = self.client.patch(url, {"username": "2@redcompany.com",
                                          "first_name": "John", "last_name": "Pork"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_update_personal_user_details_check_with_get_put_authenticated_unauthorized(self):
+    def test_update_personal_user_details_put_different_username_and_email(self):
         url = reverse("user_profile")
 
-        response = self.client.put(url, {"username": "1@redcompany.com", "email": "1@redcompany.com",
-                                         "first_name": "John", "last_name": "Pork"})
+        response = self.client.put(url, {"username": "3@newcompany.com", "email": "5@oldcompany.com",
+                                           "first_name": "John", "last_name": "Pork"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         get_response = self.client.get(url)
         self.assertEqual(get_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(get_response.data["username"], "1@redcompany.com")
+        # Username should be the same as email, as it is internally enforced
+        self.assertEqual(get_response.data["username"], "5@oldcompany.com")
+        self.assertEqual(get_response.data["username"], "5@oldcompany.com")
         self.assertEqual(get_response.data["first_name"], "John")
         self.assertEqual(get_response.data["last_name"], "Pork")
 
-    def test_update_personal_user_details_check_with_get_patch_authenticated_unauthorized(self):
+    def test_update_personal_user_details_patch_different_username_and_email(self):
         url = reverse("user_profile")
 
-        response = self.client.patch(url, {"username": "1@redcompany.com", "email": "1@redcompany.com",
-                                         "first_name": "John", "last_name": "Pork"})
+        response = self.client.patch(url, {"username": "3@newcompany.com", "email": "5@oldcompany.com",
+                                           "first_name": "John", "last_name": "Pork"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         get_response = self.client.get(url)
         self.assertEqual(get_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(get_response.data["username"], "1@redcompany.com")
+        # Username should be the same as email, as it is internally enforced
+        self.assertEqual(get_response.data["username"], "5@oldcompany.com")
+        self.assertEqual(get_response.data["username"], "5@oldcompany.com")
         self.assertEqual(get_response.data["first_name"], "John")
         self.assertEqual(get_response.data["last_name"], "Pork")

@@ -1,19 +1,11 @@
 from io import BytesIO, TextIOWrapper
 
+from aas_test_engines.file import *
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from core.models import User, EmissionBoMLink, ProductBoMLineItem, Product, CompanyMembership, Company
-from core.models import UserEnergyEmission, ProductionEnergyEmission, TransportEmission,MaterialEmission
-from core.models import  UserEnergyEmissionReference, ProductionEnergyEmissionReference, TransportEmissionReference, \
-    MaterialEmissionReference
-from core.models import UserEnergyEmissionReferenceFactor, TransportEmissionReferenceFactor, \
-    MaterialEmissionReferenceFactor, ProductionEnergyEmissionReferenceFactor , LifecycleStage
-from core.models import ProductSharingRequestStatus, ProductSharingRequest
-from core.models.product import ProductEmissionOverrideFactor
-from core.models import EmissionOverrideFactor
-from aas_test_engines.file import *
 
+from core.models import Product
 from core.tests.setup_functions import tech_companies_setup
 
 
