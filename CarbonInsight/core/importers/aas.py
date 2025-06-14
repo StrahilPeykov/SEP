@@ -19,6 +19,18 @@ from core.models.reference_impact_unit import ReferenceImpactUnit
 logger = logging.getLogger(__name__)
 
 def aas_to_product(objects: DictObjectStore) -> Product:
+    """
+    Parses product data from an AAS Digital Nameplate submodel.
+
+    Args:
+        objects: The AAS object store containing the submodels.
+
+    Returns:
+        A new, unsaved Product instance with data from the nameplate.
+
+    Raises:
+        ValidationError: If 'ContactInformation' is missing from the nameplate.
+    """
     product = Product()
 
     digital_nameplate = objects.get_identifiable("https://admin-shell.io/zvei/nameplate/2/0/Nameplate")
@@ -64,6 +76,15 @@ def aas_to_product(objects: DictObjectStore) -> Product:
     return product
 
 def aas_to_emissions(objects: DictObjectStore) -> Tuple[Iterable[Emission], Iterable[EmissionOverrideFactor]]:
+    """
+    Parses emission data from an AAS Carbon Footprint submodel.
+
+    Args:
+        objects: The AAS object store with the Carbon Footprint submodel.
+
+    Returns:
+        A tuple with lists of unsaved Emission and EmissionOverrideFactor instances.
+    """
     emissions = []
     emission_override_factors = []
     carbon_footprint_sm = objects.get_identifiable("https://admin-shell.io/idta/SubmodelTemplate/CarbonFootprint/1/0")
@@ -106,9 +127,6 @@ def aas_to_emissions(objects: DictObjectStore) -> Tuple[Iterable[Emission], Iter
         elif "production" in source or "energy" in source or "manufacturing" in source:
             emission = ProductionEnergyEmission()
             emission.energy_consumption = 0
-        elif "material" in source:
-            emission = MaterialEmission()
-            emission.weight = 0
         else:
             logger.warning(f"Unknown emission source {source} when importing AAS")
             continue
@@ -128,6 +146,16 @@ def aas_to_emissions(objects: DictObjectStore) -> Tuple[Iterable[Emission], Iter
     return emissions, emission_override_factors
 
 def aas_objects_to_db(objects: DictObjectStore, supplier:Company) -> Product:
+    """
+    Converts AAS objects to a Product and its Emissions, then saves to the database.
+
+    Args:
+        objects: The AAS object store with product and emission data.
+        supplier: The company to associate as the product's supplier.
+
+    Returns:
+        The newly created and saved Product instance.
+    """
     product = aas_to_product(objects)
     product.supplier = supplier
     product.save()
@@ -141,6 +169,16 @@ def aas_objects_to_db(objects: DictObjectStore, supplier:Company) -> Product:
     return product
 
 def aas_aasx_to_db(file:BytesIO, supplier:Company) -> Product:
+    """
+    Reads, validates, and imports an AASX file into the database.
+
+    Args:
+        file: The AASX file content as a byte stream.
+        supplier: The supplier company for the product.
+
+    Returns:
+        The newly created and saved Product instance.
+    """
     validate_aas_aasx(file)
 
     objects = DictObjectStore()
@@ -152,6 +190,16 @@ def aas_aasx_to_db(file:BytesIO, supplier:Company) -> Product:
     return aas_objects_to_db(objects, supplier)
 
 def aas_json_to_db(file:BytesIO, supplier:Company) -> Product:
+    """
+    Reads, validates, and imports an AAS JSON file into the database.
+
+    Args:
+        file: The AAS JSON file content as a byte stream.
+        supplier: The supplier company for the product.
+
+    Returns:
+        The newly created and saved Product instance.
+    """
     validate_aas_json(file)
 
     objects = DictObjectStore()
@@ -160,20 +208,20 @@ def aas_json_to_db(file:BytesIO, supplier:Company) -> Product:
     return aas_objects_to_db(objects, supplier)
 
 def aas_xml_to_db(file:BytesIO, supplier:Company) -> Product:
+    """
+    Reads, validates, and imports an AAS XML file into the database.
+
+    Args:
+        file: The AAS XML file content as a byte stream.
+        supplier: The supplier company for the product.
+
+    Returns:
+        The newly created and saved Product instance.
+    """
     validate_aas_xml(file)
 
     objects = DictObjectStore()
     read_aas_json_file_into(objects, file)
 
     return aas_objects_to_db(objects, supplier)
-
-def get_error_critical_messages(result: AasTestResult) -> list[str]:
-    errors = []
-    if result.level == Level.CRITICAL:
-        errors.append(result.message)
-    elif result.level == Level.ERROR:
-        errors.append(result.message)
-    for sub_result in result.sub_results:
-        errors.extend(get_error_critical_messages(sub_result))
-    return errors
 

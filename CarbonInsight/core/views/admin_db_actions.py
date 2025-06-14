@@ -27,6 +27,15 @@ User = get_user_model()
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def populate_db(request):
+    """
+    Populates the database with test users, companies, and associated data for testing purposes.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: A redirect response to the admin page upon successful population.
+    """
     # Create test users
     admin_user = User.objects.create_user(username="admin@example.com", email="admin@example.com", password="1234567890")
     admin_user.is_superuser = True
@@ -237,6 +246,15 @@ def populate_db(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def destroy_db(request):
+    """
+    Deletes all data from the database for testing purposes.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        Response: An HTTP 200 OK response confirming database destruction.
+    """
     # Delete all data
     ProductBoMLineItem.objects.all().delete()
     Product.objects.all().delete()

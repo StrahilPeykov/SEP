@@ -9,6 +9,10 @@ from .reference_impact_unit import ReferenceImpactUnit
 
 
 class ProductionEnergyEmission(Emission):
+    """
+    Class that models a production energy emission.
+    """
+
     energy_consumption = models.FloatField(
         validators=[MinValueValidator(0.0)],
         help_text="Energy consumption in kWh",
@@ -22,6 +26,13 @@ class ProductionEnergyEmission(Emission):
     )
 
     def _get_emission_trace(self) -> EmissionTrace:
+        """
+        _get_emission_trace override from Emission class, calculates the EmissionTrace of the ProductionEnergyEmission.
+
+        Returns:
+            generated EmissionTrace object for this production energy emission
+        """
+
         if self.reference is None:
             reference_multiplied_factor = EmissionTrace(
                 label="Production energy consumption emission",
@@ -40,15 +51,33 @@ class ProductionEnergyEmission(Emission):
         verbose_name = "Production energy emission"
         verbose_name_plural = "Production energy emissions"
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        __str__ override that returns the energy consumption in kWh and the Product name the emission is attached to.
+
+        Returns:
+            Energy consumption in kWh and the Product name the emission is attached to.
+        """
+
         return f"{self.energy_consumption}kWh (Production energy) for {self.parent_product.name}"
 
 class ProductionEnergyEmissionReference(models.Model):
+    """
+    Class that models a production energy emission reference.
+    """
+
     common_name = models.CharField(max_length=255, null=True, blank=True)
     technical_name = models.CharField(max_length=255, null=True, blank=True)
 
     @property
     def name(self) -> str:
+        """
+        Returns the common name and the technical name for the ProductionEnergyEmissionReference.
+
+        Returns:
+            Common name and the technical name for the ProductionEnergyEmissionReference
+        """
+
         if self.common_name is not None:
             return self.common_name
         if self.technical_name is not None:
@@ -66,6 +95,13 @@ class ProductionEnergyEmissionReference(models.Model):
         ]
 
     def get_emission_trace(self) -> EmissionTrace:
+        """
+        Calculates the PCF and returns a tree structured trace for emission that is to be used in DPP
+
+        Returns:
+            generated EmissionTrace for this production energy emission
+        """
+
         root = EmissionTrace(
             label=f"Reference values for {self.name}",
             methodology=f"Database lookup",
@@ -85,10 +121,22 @@ class ProductionEnergyEmissionReference(models.Model):
         return root
     get_emission_trace.short_description = "Emissions trace"
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        __str__ override that returns the name of the ProductionEnergyEmissionReference
+
+        Returns:
+            Name of the ProductionEnergyEmissionReference
+        """
+
         return self.name
 
 class ProductionEnergyEmissionReferenceFactor(models.Model):
+    """
+    Class that models a production energy emission reference factor which holds a lifecycle stage and emissions for the
+     lifecycle stage.
+    """
+
     emission_reference = models.ForeignKey(
         "ProductionEnergyEmissionReference",
         on_delete=models.CASCADE,

@@ -1,3 +1,7 @@
+"""
+Tests for company user API
+"""
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -14,6 +18,10 @@ class CompanyUserManagementAPITests(APITestCase):
         paint_companies_setup(self)
 
     def test_add_user_to_company_unauthenticated(self):
+        """
+        Test for authorizing another user to operate a company without logging in.
+        """
+
         self.client.credentials()
         url = reverse("company-users-list", args=[self.red_company.id])
         data = {
@@ -23,6 +31,11 @@ class CompanyUserManagementAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_add_user_to_company_authenticated_authorized(self):
+        """
+        Test for authorizing another user to operate a company by using a logged-in user that is authorized to
+         operate that company.
+        """
+
         url = reverse("company-users-list", args=[self.red_company.id])
         data = {
             "username": "1@greencompany.com"
@@ -37,6 +50,11 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_add_user_to_company_authenticated_unauthorized(self):
+        """
+        Test for authorizing another user to operate a company using a logged-in user that is not authorized to
+         operate that company.
+        """
+
         url = reverse("company-users-list", args=[self.green_company.id])
         data = {
             "username": "1@redcompany.com"
@@ -51,6 +69,10 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_remove_user_from_company_unauthenticated(self):
+        """
+        Test for removing a user from a company without logging in.
+        """
+
         self.client.credentials()
         url = reverse("company-users-detail", args=[self.red_company.id, self.red_company_user1.id])
         response = self.client.delete(url)
@@ -63,6 +85,10 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_remove_user_from_company_authenticated_authorized(self):
+        """
+        Test for removing a user from a company using a logged-in user that is authorized to operate that company.
+        """
+
         url = reverse("company-users-detail", args=[self.red_company.id, self.red_company_user2.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -74,6 +100,10 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_remove_user_from_company_authenticated_unauthorized(self):
+        """
+        Test for removing a user from a company using a logged-in user that is not authorized to operate that company.
+        """
+
         url = reverse("company-users-detail", args=[self.green_company.id, self.green_company_user1.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -85,18 +115,32 @@ class CompanyUserManagementAPITests(APITestCase):
         )
 
     def test_get_users_in_company_unauthenticated(self):
+        """
+        Test for getting authorized users list of a company without logging in.
+        """
+
         self.client.credentials()
         url = reverse("company-users-list", args=[self.red_company.id])
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_users_in_company_authenticated_authorized(self):
+        """
+        Test for getting the authorized users list of a company using a logged-in user that is authorized to operate
+         that company.
+        """
+
         url = reverse("company-users-list", args=[self.red_company.id])
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
 
     def test_get_users_in_company_authenticated_unauthorized(self):
+        """
+        Test for getting the authorized users list of a company by using a logged-in user that is not authorized to
+         operate that company.
+        """
+
         url = reverse("company-users-list", args=[self.green_company.id])
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

@@ -22,5 +22,12 @@ class User(AbstractUser):
         self.username = self.email
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        __str__ override returning username, first name and last name of the user.
+
+        Returns:
+            A string containing username, first name and last name of the user
+        """
+
         return f"{self.username} ({self.first_name} {self.last_name})"

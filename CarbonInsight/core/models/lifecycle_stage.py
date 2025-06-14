@@ -33,6 +33,13 @@ class LifecycleStage(models.TextChoices):
     OTHER = "Other", "Other"
 
     def get_aas_value(self) -> str:
+        """
+        Returns the str name of a lifecycle stage
+
+        Returns:
+            name of the lifecycle stage
+        """
+
         match self:
             case LifecycleStage.A1:
                 return "A1 - raw material supply (and upstream production)"
@@ -82,6 +89,13 @@ class LifecycleStage(models.TextChoices):
                 return "Other"
 
     def get_aas_value_id(self) -> str:
+        """
+        Returns the value ID of a lifecycle stage
+
+        Returns:
+            value ID of the lifecycle stage
+        """
+
         match self:
             case LifecycleStage.A1:
                 return "0173-1#07-ABU208#003"
@@ -134,6 +148,9 @@ class LifecycleStage(models.TextChoices):
     def from_aas_value_id(aas_value_id: str) -> "LifecycleStage":
         """
         Converts an AAS value ID to a LifecycleStage value.
+
+        Returns:
+            value ID of the lifecycle stage
         """
         for stage in LifecycleStage:
             if stage.get_aas_value_id() == aas_value_id:

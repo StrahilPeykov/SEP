@@ -1,3 +1,7 @@
+"""
+Tests for the emission trace methods that calculate PCF and return subcomponents of a product
+"""
+
 from typing import Union
 
 from rest_framework.test import APITestCase
@@ -135,8 +139,12 @@ class EmissionTraceTestCase(APITestCase):
             ]
     ):
         """
-        List the lifecycle stages and the co2 factor of material emission reference and check if method returns correct
-        stages and values
+        List the lifecycle stages and the co2 factor of the emission references and check if method returns correct
+         stages and values.
+
+        Args:
+            trace: emission trace object
+            reference: emission reference type
         """
         emission_subtotal = {}
         for factor in reference.reference_factors.all():
@@ -150,9 +158,12 @@ class EmissionTraceTestCase(APITestCase):
             trace: EmissionTrace
     ):
         """
-                List the lifecycle stages and the emissions of material emission and check if method returns correct stages
-                and values
-                """
+        List the lifecycle stages and the emissions and check if method returns correct stages
+         and values
+
+        Args:
+            trace: emission trace object
+        """
         emission_subtotal_by_weight = {}
         for child in trace.children:
             for lifecycle_stage in child.emission_trace.emissions_subtotal:
@@ -170,6 +181,13 @@ class EmissionTraceTestCase(APITestCase):
                              trace.emissions_subtotal[lifecycle_stage])
 
     def _check_emission_trace_overriden(self,emission,trace):
+        """
+        List the lifecycle stages and the emissions and check if method returns correct stages
+         and values for the overriden trace emissions
+        Args:
+            emission: emission object
+            trace: emission trace object
+        """
 
         emission_subtotal_overriden = {}
         for override in emission.override_factors.all():
@@ -195,9 +213,12 @@ class EmissionTraceTestCase(APITestCase):
             trace: EmissionTrace
     ):
         """
-                List the lifecycle stages and the emissions of material emission and check if method returns correct stages
-                and values
-                """
+        List the lifecycle stages and the emissions product and check if method returns correct stages
+         and values
+
+        Args:
+            trace: emission trace object
+        """
         emission_subtotal_by_weight = {}
         for child in trace.children:
             if "Product" in child.emission_trace.label:
@@ -219,12 +240,20 @@ class EmissionTraceTestCase(APITestCase):
                              trace.emissions_subtotal[lifecycle_stage])
 
     def test_transport_emission_reference_get_emission_trace(self):
+        """
+        Test for emission trace method called on transport emission reference.
+        """
+
         reference = self.transport_air
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = reference.get_emission_trace()
         self._check_emission_reference_trace(returned_trace, reference)
 
     def test_transport_emission_get_emission_trace(self):
+        """
+        Test for emission trace method called on transport emission.
+        """
+
         emission = self.iphone_line_processor_transport
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = emission.get_emission_trace()
@@ -235,6 +264,10 @@ class EmissionTraceTestCase(APITestCase):
         self._check_emission_trace(returned_trace)
 
     def test_transport_emission_get_emission_trace_override(self):
+        """
+        Test for emission trace method called on transport emission that has emission overide factor.
+        """
+
         EmissionOverrideFactor.objects.create(
             emission=self.iphone_line_processor_transport,
             lifecycle_stage=LifecycleStage.A3,
@@ -247,12 +280,20 @@ class EmissionTraceTestCase(APITestCase):
         self._check_emission_trace_overriden(emission, returned_trace)
 
     def test_production_energy_emission_reference_get_emission_traces(self):
+        """
+        Test for emission trace method called on production energy emission reference.
+        """
+
         reference = self.assembly_line_reference
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = reference.get_emission_trace()
         self._check_emission_reference_trace(returned_trace, reference)
 
     def test_production_energy_emission_get_emission_traces(self):
+        """
+        Test for emission trace method called on production energy emission.
+        """
+
         emission = self.iphone_assembly_emission
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = emission.get_emission_trace()
@@ -262,6 +303,10 @@ class EmissionTraceTestCase(APITestCase):
         self._check_emission_trace(returned_trace)
 
     def test_production_energy_emission_get_emission_trace_override(self):
+        """
+        Test for emission trace method called on production energy emission that has emission override factor.
+        """
+
         EmissionOverrideFactor.objects.create(
             emission=self.iphone_assembly_emission,
             lifecycle_stage=LifecycleStage.A3,
@@ -275,12 +320,20 @@ class EmissionTraceTestCase(APITestCase):
         self._check_emission_trace_overriden(emission, returned_trace)
 
     def test_user_energy_emission_reference_get_emission_traces(self):
+        """
+        Test for emission trace method called on user energy emission reference.
+        """
+
         reference = self.charging_phone
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = reference.get_emission_trace()
         self._check_emission_reference_trace(returned_trace, reference)
 
     def test_user_energy_emission_get_emission_traces(self):
+        """
+        Test for emission trace method called on user energy emission.
+        """
+
         emission = self.iphone_charging_emission
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = emission.get_emission_trace()
@@ -290,6 +343,10 @@ class EmissionTraceTestCase(APITestCase):
         self._check_emission_trace(returned_trace)
 
     def test_user_energy_emission_get_emission_trace_override(self):
+        """
+        Test for emission trace method called on user energy emission that has emission override factor.
+        """
+
         EmissionOverrideFactor.objects.create(
             emission=self.iphone_charging_emission,
             lifecycle_stage=LifecycleStage.A5,
@@ -303,6 +360,13 @@ class EmissionTraceTestCase(APITestCase):
         self._check_emission_trace_overriden(emission, returned_trace)
 
     def test_product_get_emission_no_sub_product(self):
+        """
+        Test for emission trace method called on a product that does not contain a sub product.
+        """
+
+        self.processor_material_reference.delete()
+        self.processor_material_reference2.delete()
+
         product = self.processor
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = product.get_emission_trace()
@@ -311,6 +375,10 @@ class EmissionTraceTestCase(APITestCase):
         self._check_product_emission_trace(returned_trace)
 
     def test_product_get_emission(self):
+        """
+        Test for emission trace method called on a product.
+        """
+
         product = self.iphone
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = product.get_emission_trace()
@@ -319,6 +387,10 @@ class EmissionTraceTestCase(APITestCase):
         self._check_product_emission_trace(returned_trace)
 
     def test_product_get_emission_product_mention_class_checks(self):
+        """
+        Test that checks if the emission trace method returns the correct mention classes.
+        """
+
         product = self.processor2
         # Call for .get_emission_trace and check if the returned trace's item is correct
         returned_trace = product.get_emission_trace()

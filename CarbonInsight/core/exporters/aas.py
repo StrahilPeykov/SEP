@@ -1,3 +1,8 @@
+"""
+This module facilitates the transformation of internal product data into various
+Asset Administration Shell (AAS) standard formats.
+"""
+
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from io import BytesIO
@@ -17,6 +22,12 @@ if TYPE_CHECKING:
     from core.models import Product
 
 def product_to_aas(product: 'Product') -> Tuple[str | Iterable[str], DictObjectStore, DictSupplementaryFileContainer]:
+    """
+    Builds an in-memory Asset Administration Shell data structure for a given product.
+
+    Args:
+        product (Product): The Product instance to convert into an AAS.
+    """
     aas_identifier = f"{BASE_URL}/AAS"
     pcf_submodel_identifier = "https://admin-shell.io/idta/SubmodelTemplate/CarbonFootprint/1/0"
     dn_submodel_identifier = "https://admin-shell.io/zvei/nameplate/2/0/Nameplate"
@@ -595,6 +606,12 @@ def product_to_aas(product: 'Product') -> Tuple[str | Iterable[str], DictObjectS
 
 
 def product_to_aas_aasx(product: 'Product') -> BytesIO:
+    """
+    Generates a complete .aasx package file containing the product's AAS data.
+
+    Args:
+        product (Product): The Product instance for which to generate the AASX file.
+    """
     aas_ids, object_store, file_store = product_to_aas(product)
 
     bytes_io = BytesIO()
@@ -610,6 +627,12 @@ def product_to_aas_aasx(product: 'Product') -> BytesIO:
     return bytes_io
 
 def product_to_aas_xml(product: 'Product') -> BytesIO:
+    """
+    Serializes a product's AAS data into the standard XML file format.
+
+    Args:
+        product (Product): The Product instance for which to generate the XML file.
+    """
     aas_ids, object_store, file_store = product_to_aas(product)
 
     bytes_io = BytesIO()
@@ -620,6 +643,12 @@ def product_to_aas_xml(product: 'Product') -> BytesIO:
     return bytes_io
 
 def product_to_aas_json(product: 'Product') -> BytesIO:
+    """
+    Serializes a product's AAS data into the standard JSON file format.
+
+    Args:
+        product (Product): The Product instance for which to generate the JSON file.
+    """
     aas_ids, object_store, file_store = product_to_aas(product)
 
     bytes_io = BytesIO()

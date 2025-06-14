@@ -9,6 +9,14 @@ if TYPE_CHECKING:
 
 
 def product_to_zip(product: 'Product') -> BytesIO:
+    """
+    Creates a zip archive file of a given product that contains aasx, json, xml, scns and csv representations of that
+     product.
+
+    Args:
+        product (Product): Product object
+    """
+
     # delay import to avoid circular dependency
     from core.resources.emission_resources import (
         TransportEmissionResource,

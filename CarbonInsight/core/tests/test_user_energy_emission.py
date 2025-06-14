@@ -1,3 +1,7 @@
+"""
+Tests for user energy emission API
+"""
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -68,6 +72,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         )
 
     def test_create_user_emission_unauthenticated(self):
+        """
+        Test for adding user energy emission to a product without logging in.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-user-energy-emissions-list",
@@ -82,6 +90,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_user_emission_authenticated_authorized(self):
+        """
+        Test for adding user energy emission to a product that the user's company owns.
+        """
+
         url = reverse(
             "product-user-energy-emissions-list",
             args=[self.red_company.id, self.red_paint.id]
@@ -96,6 +108,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(UserEnergyEmission.objects.count(), 3)
 
     def test_create_user_emission_authenticated_unauthorized(self):
+        """
+        Test for adding user energy emission to a product that the user's company does not own.
+        """
+
         url = reverse(
             "product-user-energy-emissions-list",
             args=[self.green_company.id, self.green_paint.id]
@@ -109,6 +125,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_user_emission_invalid_data(self):
+        """
+        Test for adding user energy emission with invalid data.
+        """
+
         url = reverse(
             "product-user-energy-emissions-list",
             args=[self.red_company.id, self.red_paint.id]
@@ -122,6 +142,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_user_emission_product_not_found(self):
+        """
+        Test for creating user energy emissions list on a product that does not exist.
+        """
+
         url = reverse(
             "product-user-energy-emissions-list",
             args=[self.red_company.id, 9999]
@@ -135,6 +159,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertIn(response.status_code, [status.HTTP_404_NOT_FOUND, status.HTTP_403_FORBIDDEN])
 
     def test_put_user_emission_unauthenticated(self):
+        """
+        Test for modifying a user energy emission without logging in with a put request.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-user-energy-emissions-detail",
@@ -149,6 +177,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_put_user_emission_authenticated_authorized(self):
+        """
+        Test for modifying a user energy emission of a product that the user's company owns with a put request.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_user_emission_red_product.id]
@@ -164,6 +196,11 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(self.existing_user_emission_red_product.energy_consumption, 120.0)
 
     def test_put_user_emission_authenticated_unauthorized(self):
+        """
+        Test for modifying a user energy emission of a product that the user's company does not own with a put
+         request.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.green_company.id, self.green_paint.id, self.existing_user_emission_green_product.id]
@@ -177,6 +214,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_put_user_emission_not_found(self):
+        """
+        Test for modifying a production energy emission of a product that does not exist with a put request.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, 9999]
@@ -190,6 +231,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_put_user_emission_invalid_data(self):
+        """
+        Test for modifying a production energy emission with a put request that has invalid data.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_user_emission_red_product.id]
@@ -203,6 +248,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_put_user_emission_mismatch_product_in_url(self):
+        """
+        Crash test for trying to query a wrong product url in put API.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.purple_paint.id, self.existing_user_emission_red_product.id]
@@ -216,6 +265,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_patch_user_emission_unauthenticated(self):
+        """
+        Test for modifying a user energy emission without logging in with a patch request.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-user-energy-emissions-detail",
@@ -228,6 +281,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_patch_user_emission_authenticated_authorized(self):
+        """
+        Test for modifying a user energy emission of a product that the user's company owns with a patch request.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_user_emission_red_product.id]
@@ -242,6 +299,11 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(self.existing_user_emission_red_product.energy_consumption, 110.0)
 
     def test_patch_user_emission_authenticated_unauthorized(self):
+        """
+        Test for modifying a user energy emission of a product that the user's company does not own with a patch
+         request.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.green_company.id, self.green_paint.id, self.existing_user_emission_green_product.id]
@@ -253,6 +315,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_patch_user_emission_not_found(self):
+        """
+        Test for modifying a production energy emission of a product that does not exist with a patch request.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, 9999]
@@ -264,6 +330,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_patch_user_emission_invalid_data(self):
+        """
+        Test for modifying a production energy emission with a patch request that has invalid data.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_user_emission_red_product.id]
@@ -275,6 +345,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_patch_user_emission_mismatch_product_in_url(self):
+        """
+        Crash test for trying to query a wrong product url in patch API.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.purple_paint.id, self.existing_user_emission_red_product.id]
@@ -286,6 +360,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_user_emission_unauthenticated(self):
+        """
+        Test for deleting a user energy emission without logging in.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-user-energy-emissions-detail",
@@ -296,6 +374,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(UserEnergyEmission.objects.count(), 2)
 
     def test_delete_user_emission_authenticated_authorized(self):
+        """
+        Test for deleting a user energy emission of a product that the user's company owns.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_user_emission_red_product.id]
@@ -305,6 +387,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(UserEnergyEmission.objects.count(), 1)
 
     def test_delete_user_emission_authenticated_unauthorized(self):
+        """
+        Test for deleting a user energy emission of a product that the user's company does not own.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.green_company.id, self.green_paint.id, self.existing_user_emission_green_product.id]
@@ -314,6 +400,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(UserEnergyEmission.objects.count(), 2)
 
     def test_delete_user_emission_not_found(self):
+        """
+        Test for deleting a production energy emission of a product that does not exist.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, 9999]
@@ -323,6 +413,10 @@ class UserEnergyEmissionAPITests(APITestCase):
         self.assertEqual(UserEnergyEmission.objects.count(), 2)
 
     def test_delete_user_emission_mismatch_product_in_url(self):
+        """
+        Crash test for trying to query a wrong product url in delete API.
+        """
+
         url = reverse(
             "product-user-energy-emissions-detail",
             args=[self.red_company.id, self.purple_paint.id, self.existing_user_emission_red_product.id]

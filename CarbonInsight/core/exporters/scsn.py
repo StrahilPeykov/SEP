@@ -1,3 +1,8 @@
+"""
+This module handles the conversion of internal product data into SCSN-compliant
+XML formats for sharing carbon footprint information.
+"""
+
 from datetime import datetime
 from io import BytesIO
 from typing import TYPE_CHECKING
@@ -12,6 +17,13 @@ if TYPE_CHECKING:
     from core.models import Product
 
 def product_to_scsn_xml_tree(product: 'Product', include_filler_data:bool = True) -> etree.Element:
+    """
+    Constructs an in-memory XML tree for a given product based on the SCSN UBL standard.
+
+    Args:
+        product (Product): The Product instance to serialize.
+        include_filler_data (bool): Flag to include placeholder party and document data.
+    """
     nsmap = {
         None: "urn:scsn:names:specification:ubl:schema:xsd:Measurement",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
@@ -154,6 +166,12 @@ def product_to_scsn_xml_tree(product: 'Product', include_filler_data:bool = True
     return measurement
 
 def product_to_scsn_pcf_xml(product: 'Product') -> BytesIO:
+    """
+    Generates a minimal XML file containing only the core Product Carbon Footprint (PCF) data.
+
+    Args:
+        product (Product): The Product instance for which to generate the PCF XML.
+    """
     tree = product_to_scsn_xml_tree(product, include_filler_data=False)
 
     bytes_io = BytesIO()
@@ -162,6 +180,12 @@ def product_to_scsn_pcf_xml(product: 'Product') -> BytesIO:
     return bytes_io
 
 def product_to_scsn_full_xml(product: 'Product') -> BytesIO:
+    """
+    Generates the complete SCSN XML file for a product, including placeholder party and document data.
+
+    Args:
+        product (Product): The Product instance for which to generate the full XML.
+    """
     tree = product_to_scsn_xml_tree(product, include_filler_data=True)
 
     bytes_io = BytesIO()

@@ -8,6 +8,9 @@ from rest_framework.validators import UniqueTogetherValidator
 
 
 class ProductEmissionOverrideFactorSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ProductEmissionOverrideFactor.
+    """
     # allow DRF-Writable-Nested to match existing records on update
     id = serializers.IntegerField(required=False)
 
@@ -16,7 +19,11 @@ class ProductEmissionOverrideFactorSerializer(serializers.ModelSerializer):
         fields = ("id", "lifecycle_stage", "co_2_emission_factor_biogenic", "co_2_emission_factor_non_biogenic")
 
 class ProductSerializer(WritableNestedModelSerializer):
+    """
+    Serializer for Product.
+    """
     supplier = serializers.PrimaryKeyRelatedField(read_only=True)
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     emission_total = serializers.SerializerMethodField()
     emission_total_non_biogenic = serializers.SerializerMethodField()
     emission_total_biogenic = serializers.SerializerMethodField()
@@ -34,21 +41,59 @@ class ProductSerializer(WritableNestedModelSerializer):
         ]
 
     def get_emission_total(self, obj: Product) -> Optional[float]:
-        if not obj.supplier.user_is_member(self.context['request'].user):
+        """
+        Returns the emission total for this product.
+
+        Args:
+            obj: Product object.
+        Returns:
+            total emission of the Product
+        """
+        if (not obj.supplier.user_is_member(self.context['request'].user)
+                and not obj.supplier.auto_approve_product_sharing_requests):
             return None
         return obj.get_emission_trace().total
 
     def get_emission_total_non_biogenic(self, obj: Product) -> Optional[float]:
-        if not obj.supplier.user_is_member(self.context['request'].user):
+        """
+        Returns the non-biogenic emission total for this product.
+
+        Args:
+            obj: Product object.
+        Returns:
+            total non-biogenic emission of the Product
+        """
+
+        if (not obj.supplier.user_is_member(self.context['request'].user)
+                and not obj.supplier.auto_approve_product_sharing_requests):
             return None
         return obj.get_emission_trace().total_non_biogenic
 
     def get_emission_total_biogenic(self, obj: Product) -> Optional[float]:
-        if not obj.supplier.user_is_member(self.context['request'].user):
+        """
+        Returns the biogenic emission total for this product.
+
+        Args:
+            obj: Product object.
+        Returns:
+            total biogenic emission of the Product
+        """
+
+        if (not obj.supplier.user_is_member(self.context['request'].user)
+                and not obj.supplier.auto_approve_product_sharing_requests):
             return None
         return obj.get_emission_trace().total_biogenic
 
     def to_internal_value(self, data):
+        """
+        Adds parent Company to ProductBoMLineItemSerializer.
+
+        Args:
+            data: ProductBoMLineItemSerializer data
+        Returns:
+            modified ProductBoMLineItemSerializer data
+        """
+
         # first perform the normal deserialization
         validated = super().to_internal_value(data)
         # now inject supplier from the URL

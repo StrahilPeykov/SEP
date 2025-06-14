@@ -1,3 +1,7 @@
+"""
+Tests for companies API
+"""
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -15,12 +19,20 @@ class CompanyAPITests(APITestCase):
         self.blue_company.delete()
 
     def test_list_companies_unauthenticated(self):
+        """
+        Test for getting a list of companies when not logged in.
+        """
+
         self.client.credentials()
         url = reverse("company-list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
     def test_list_companies_authenticated(self):
+        """
+        Test for getting list of companies.
+        """
+
         url = reverse("company-list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -28,6 +40,9 @@ class CompanyAPITests(APITestCase):
         self.assertIn(response.data[0]["name"], ["Red company BV", "Green company BV"])
         
     def test_create_company_unauthenticated(self):
+        """
+        Test for creating a company without logging in.
+        """
         self.client.credentials()
         url = reverse("company-list")
         data = {
@@ -40,6 +55,10 @@ class CompanyAPITests(APITestCase):
         self.assertFalse(Company.objects.filter(name="New Company").exists())
         
     def test_create_company_authenticated(self):
+        """
+        Test for creating a company when logged in.
+        """
+
         current_company_count = Company.objects.count()
         url = reverse("company-list")
         data = {
@@ -55,6 +74,10 @@ class CompanyAPITests(APITestCase):
         self.assertTrue(CompanyMembership.objects.filter(user=self.red_company_user1, company__name="New Company").exists())
         
     def test_create_company_with_existing_vat_number(self):
+        """
+        Test for creating a company with existing vat number.
+        """
+
         url = reverse("company-list")
         data = {
             "name": "New Company",
@@ -67,6 +90,10 @@ class CompanyAPITests(APITestCase):
         self.assertFalse(CompanyMembership.objects.filter(user=self.red_company_user1, company__name="New Company").exists())
         
     def test_create_company_with_existing_business_registration_number(self):
+        """
+        Test for creating a company with existing business registration number.
+        """
+
         url = reverse("company-list")
         data = {
             "name": "New Company",
@@ -79,6 +106,10 @@ class CompanyAPITests(APITestCase):
         self.assertFalse(CompanyMembership.objects.filter(user=self.red_company_user1, company__name="New Company").exists())
         
     def test_put_company_unauthenticated(self):
+        """
+        Test for editing a company with a put request without logging in.
+        """
+
         self.client.credentials()
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
@@ -90,6 +121,10 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
     def test_put_company_authenticated_authorized(self):
+        """
+        Test for editing a company that the user is authorized to operate with a put request.
+        """
+
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
             "name": "Updated Company",
@@ -102,6 +137,10 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(self.red_company.name, "Updated Company")
     
     def test_put_company_authenticated_unauthorized(self):
+        """
+        Test for editing a company that the user is not authorized to operate with a put request.
+        """
+
         url = reverse("company-detail", args=[self.green_company.id])
         data = {
             "name": "Updated Company",
@@ -112,6 +151,10 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         
     def test_put_company_with_existing_vat_number(self):
+        """
+        Test for editing a company and giving it an already existing vat number with a put request.
+        """
+
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
             "name": "Updated Company",
@@ -123,6 +166,10 @@ class CompanyAPITests(APITestCase):
         self.assertIn("vat_number", response.data["errors"][0]["attr"])
         
     def test_put_company_with_existing_business_registration_number(self):
+        """
+        Test for editing a company and giving it an existing business registration number with a put request.
+        """
+
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
             "name": "Updated Company",
@@ -134,6 +181,10 @@ class CompanyAPITests(APITestCase):
         self.assertIn("business_registration_number", response.data["errors"][0]["attr"])
         
     def test_patch_company_unauthenticated(self):
+        """
+        Test for editing a company with a patch request without logging in.
+        """
+
         self.client.credentials()
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
@@ -143,6 +194,10 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_patch_company_authenticated_authorized(self):
+        """
+        Test for editing a company that the user is authorized to operate with a patch request.
+        """
+
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
             "name": "Partially Updated Company"
@@ -153,6 +208,10 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(self.red_company.name, "Partially Updated Company")
 
     def test_patch_company_authenticated_unauthorized(self):
+        """
+        Test for editing a company that the user is not authorized to operate with a patch request.
+        """
+
         url = reverse("company-detail", args=[self.green_company.id])
         data = {
             "name": "Partially Updated Company"
@@ -161,6 +220,10 @@ class CompanyAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_patch_company_with_existing_vat_number(self):
+        """
+        Test for editing a company and giving it an existing vat number with a patch request.
+        """
+
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
             "vat_number": "VATGREEN"  # Existing VAT number
@@ -170,6 +233,10 @@ class CompanyAPITests(APITestCase):
         self.assertIn("vat_number", response.data["errors"][0]["attr"])
 
     def test_patch_company_with_existing_business_registration_number(self):
+        """
+        Test for editing a company and giving it an existing business registration number with a patch request.
+        """
+
         url = reverse("company-detail", args=[self.red_company.id])
         data = {
             "business_registration_number": "NL654321"  # Existing business registration number
@@ -179,12 +246,20 @@ class CompanyAPITests(APITestCase):
         self.assertIn("business_registration_number", response.data["errors"][0]["attr"])
 
     def test_delete_company_unauthenticated(self):
+        """
+        Test for deleting a company with a delete request without logging in.
+        """
+
         self.client.credentials()
         url = reverse("company-detail", args=[self.red_company.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_company_authenticated_authorized(self):
+        """
+        Test for deleting a company that the user is authorized to operate with a delete request.
+        """
+
         company_count = Company.objects.count()
         url = reverse("company-detail", args=[self.red_company.id])
         response = self.client.delete(url)
@@ -193,6 +268,10 @@ class CompanyAPITests(APITestCase):
         self.assertFalse(Company.objects.filter(id=self.red_company.id).exists())
 
     def test_delete_company_authenticated_unauthorized(self):
+        """
+        Test for deleting a company that the user is not authorized to operate with a delete request.
+        """
+
         company_count = Company.objects.count()
         url = reverse("company-detail", args=[self.green_company.id])
         response = self.client.delete(url)
@@ -201,6 +280,10 @@ class CompanyAPITests(APITestCase):
         self.assertTrue(Company.objects.filter(id=self.green_company.id).exists())
 
     def test_list_companies_my(self):
+        """
+        Test for a logged in user to get the list of the companies they are authorized to operate.
+        """
+
         CompanyMembership.objects.create(user=self.red_company_user1, company=self.green_company)
 
         self.blue_company = Company.objects.create(
@@ -219,6 +302,10 @@ class CompanyAPITests(APITestCase):
         self.assertNotIn("Blue company BV", company_list)
 
     def test_create_company_authenticated_duplicate_company(self):
+        """
+        Test for trying to create a company that already exists.
+        """
+
         company_count = Company.objects.count()
         url = reverse("company-list")
         data = {

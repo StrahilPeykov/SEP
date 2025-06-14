@@ -10,6 +10,16 @@ class AuditLogEntrySerializer(serializers.ModelSerializer):
     - `actor` is the user who made the change.
     - `content_type` shows which model was changed.
     - `object_pk` is the primary key of the instance that was changed.
+
+    Read-only fields:
+            id
+            timestamp
+            actor_username
+            content_type_app_label
+            content_type_model
+            object_pk
+            action
+            changes
     """
     actor_username = serializers.CharField(
         source="actor.username",
@@ -43,6 +53,12 @@ class AuditLogEntrySerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_changes(self, obj: LogEntry) -> str:
+        """
+        Return changes in log entry.
+
+        Returns:
+            str: changes in log entry
+        """
         return obj.changes_text if obj.changes_text else obj.changes_str
 
 

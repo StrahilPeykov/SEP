@@ -21,6 +21,9 @@ from core.models import UserEnergyEmissionReference, ProductionEnergyEmissionRef
     ),
 )
 class TransportEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Provides read-only access to transport emission reference data.
+    """
     queryset = TransportEmissionReference.objects.all()
     serializer_class = TransportEmissionReferenceSerializer
     permission_classes = [IsAuthenticated]
@@ -38,6 +41,9 @@ class TransportEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
     ),
 )
 class UserEnergyEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Provides read-only access to user energy emission reference data.
+    """
     queryset = UserEnergyEmissionReference.objects.all()
     serializer_class = UserEnergyEmissionReferenceSerializer
     permission_classes = [IsAuthenticated]
@@ -55,6 +61,9 @@ class UserEnergyEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
     ),
 )
 class ProductionEnergyEmissionReferenceViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Provides read-only access to production energy emission reference data.
+    """
     queryset = ProductionEnergyEmissionReference.objects.all()
     serializer_class = ProductionEnergyEmissionReferenceSerializer
     permission_classes = [IsAuthenticated]

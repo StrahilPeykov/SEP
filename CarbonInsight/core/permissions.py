@@ -18,6 +18,8 @@ class IsCompanyMember(BasePermission):
         # only nested company routes include company_pk
         company_pk = view.kwargs.get('company_pk')
         if not company_pk:
+            company_pk = view.kwargs.get('pk')
+        if not company_pk:
             return False
 
         try:
@@ -61,6 +63,9 @@ class ProductPermission(BasePermission):
       - PUT/PATCH/DELETE -> only if you can edit parent company
     """
     def _is_company_member(self, request, view):
+        """
+        Shorthand to check if the user is a member of the parent company.
+        """
         company = view.get_parent_company()
         return company.user_is_member(request.user)
 

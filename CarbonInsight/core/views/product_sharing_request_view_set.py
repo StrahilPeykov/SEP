@@ -36,6 +36,9 @@ class ProductSharingRequestViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
+    """
+    Handles listing and managing product sharing requests for a specific company.
+    """
     queryset = ProductSharingRequest.objects.none()  # Set to none to force overriding get_queryset
     serializer_class = ProductSharingRequestSerializer
     permission_classes = [IsAuthenticated]
@@ -43,18 +46,32 @@ class ProductSharingRequestViewSet(
     filterset_fields = ["status"]
 
     def get_serializer_class(self):
+        """
+        Determines the appropriate serializer class based on the requested action.
+        """
         if self.action in ["bulk_approve", "bulk_deny"]:
             return BulkActionSerializer
         return super().get_serializer_class()
 
     def get_queryset(self):
+        """
+        Retrieves the queryset of product sharing requests relevant to the parent company.
+
+        Returns:
+            QuerySet: A queryset of ProductSharingRequest instances.
+        """
         company = self.get_parent_company()
         return ProductSharingRequest.objects.filter(
             product__supplier=company
         )
 
     def check_permissions(self, request):
-        # First enforce IsAuthenticated
+        """
+        Enforces authentication and verifies that the user is a member of the company.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+        """
         super().check_permissions(request)
 
         # Then enforce company membership
@@ -73,6 +90,16 @@ class ProductSharingRequestViewSet(
     )
     @action(detail=False, methods=["post"])
     def bulk_approve(self, request, company_pk=None):
+        """
+        Approves a list of product sharing requests by their IDs, marking them as accepted and logging the action.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing a list of request IDs.
+            company_pk (int, optional): The primary key of the parent Company.
+
+        Returns:
+            Response: An HTTP 200 OK response indicating the number of updated requests.
+        """
         qs = self.get_queryset().filter(id__in=request.data.get("ids"))
         updated = qs.update(status=ProductSharingRequestStatus.ACCEPTED)
         for psr in qs:
@@ -88,6 +115,16 @@ class ProductSharingRequestViewSet(
     )
     @action(detail=False, methods=["post"])
     def bulk_deny(self, request, company_pk=None):
+        """
+        Denies a list of product sharing requests by their IDs, marking them as rejected and logging the action.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing a list of request IDs.
+            company_pk (int, optional): The primary key of the parent Company.
+
+        Returns:
+            Response: An HTTP 200 OK response indicating the number of updated requests.
+        """
         qs = self.get_queryset().filter(id__in=request.data.get("ids"))
         updated = qs.update(status=ProductSharingRequestStatus.REJECTED)
         for psr in qs:

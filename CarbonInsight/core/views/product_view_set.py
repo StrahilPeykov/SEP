@@ -23,7 +23,7 @@ from core.importers.aas import aas_aasx_to_db, aas_json_to_db, aas_xml_to_db
 from core.importers.aas_validators import validate_aas_aasx, validate_aas_json, validate_aas_xml
 from core.models import Product, Company, TransportEmission, UserEnergyEmission, ProductionEnergyEmission
 from core.models.ai_conversation_log import AIConversationLog
-from core.permissions import ProductPermission
+from core.permissions import ProductPermission, ProductSubAPIPermission
 from core.resources.product_resource import ProductResource
 from core.serializers.ai_conversation_log_serializer import AIConversationLogSerializer
 from core.serializers.audit_log_entry_serializer import AuditLogEntrySerializer
@@ -86,6 +86,9 @@ class ProductViewSet(
     CompanyMixin,
     viewsets.ModelViewSet
 ):
+    """
+    Manages CRUD operations and related actions for products within a company.
+    """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated, ProductPermission]
@@ -94,6 +97,9 @@ class ProductViewSet(
     search_fields = ['name', 'description', 'manufacturer_name', 'sku']
 
     def get_serializer_class(self):
+        """
+        Determines the appropriate serializer class based on the current action.
+        """
         if self.action in ["request_access"]:
             return ProductSharingRequestRequestAccessSerializer
         if self.action in ["emission_traces"]:
@@ -105,6 +111,12 @@ class ProductViewSet(
         return super().get_serializer_class()
 
     def get_queryset(self):
+        """
+        Retrieves the queryset of products, filtered by the parent company and visibility settings.
+
+        Returns:
+            QuerySet: A queryset of Product instances.
+        """
         company = self.get_parent_company()
         qs = Product.objects.filter(supplier=company)
         user = self.request.user
@@ -115,6 +127,12 @@ class ProductViewSet(
         return qs
 
     def perform_create(self, serializer):
+        """
+        Performs the creation of a new product, associating it with the parent company as the supplier.
+
+        Args:
+            serializer (ProductSerializer): The serializer instance containing validated data for the new product.
+        """
         company = self.get_parent_company()
         serializer.save(supplier=company)
 
@@ -126,6 +144,21 @@ class ProductViewSet(
     )
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def request_access(self, request, *args, **kwargs):
+        """
+        Handles requests for access to a product's carbon emissions.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the requesting company's ID.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            Response: An HTTP 200 OK response upon successful request.
+
+        Raises:
+            PermissionDenied: If the user is not a member of the requesting company.
+            ValidationError: If an issue occurs during the access request process.
+        """
         product = self.get_object()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -157,6 +190,17 @@ class ProductViewSet(
     )
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, ProductPermission])
     def emission_traces(self, request, *args, **kwargs):
+        """
+        Retrieves the complete emission trace for a specific product.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            Response: An HTTP 200 OK response containing the serialized emission trace data.
+        """
         product = self.get_object()
         emission_trace = product.get_emission_trace()
         serializer = self.get_serializer(emission_trace)
@@ -175,9 +219,20 @@ class ProductViewSet(
         }
     )
     @action(detail=True, methods=["get"],
-            permission_classes=[IsAuthenticated, ProductPermission],
+            permission_classes=[IsAuthenticated, ProductSubAPIPermission],
             url_path="export/aas_aasx")
     def export_aas_aasx(self, request, *args, **kwargs):
+        """
+        Exports the product data to AAS AASX format, including PCF and Digital Nameplate.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            FileResponse: A downloadable AASX file.
+        """
         product = self.get_object()
         file = product.export_to_aas_aasx()
         validate_aas_aasx(file)
@@ -202,9 +257,20 @@ class ProductViewSet(
         }
     )
     @action(detail=True, methods=["get"],
-            permission_classes=[IsAuthenticated, ProductPermission],
+            permission_classes=[IsAuthenticated, ProductSubAPIPermission],
             url_path="export/aas_xml")
     def export_aas_xml(self, request, *args, **kwargs):
+        """
+        Exports the product data to AAS XML format, including PCF and Digital Nameplate.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            FileResponse: A downloadable XML file.
+        """
         product = self.get_object()
         file = product.export_to_aas_xml()
         validate_aas_xml(file)
@@ -229,9 +295,20 @@ class ProductViewSet(
         }
     )
     @action(detail=True, methods=["get"],
-            permission_classes=[IsAuthenticated, ProductPermission],
+            permission_classes=[IsAuthenticated, ProductSubAPIPermission],
             url_path="export/aas_json")
     def export_aas_json(self, request, *args, **kwargs) -> FileResponse:
+        """
+        Exports the product data to AAS JSON format, including PCF and Digital Nameplate.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            FileResponse: A downloadable JSON file.
+        """
         product = self.get_object()
         file = product.export_to_aas_json()
         validate_aas_json(file)
@@ -257,9 +334,20 @@ class ProductViewSet(
         }
     )
     @action(detail=True, methods=["get"],
-            permission_classes=[IsAuthenticated, ProductPermission],
+            permission_classes=[IsAuthenticated, ProductSubAPIPermission],
             url_path="export/scsn_pcf_xml")
     def export_scsn_pcf_xml(self, request, *args, **kwargs):
+        """
+        Exports the product's PCF data to a partial SCSN XML format.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            FileResponse: A downloadable XML file containing partial SCSN PCF data.
+        """
         product = self.get_object()
         file = product.export_to_scsn_pcf_xml()
         LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to SCSN XML format (partial)")
@@ -283,9 +371,20 @@ class ProductViewSet(
         }
     )
     @action(detail=True, methods=["get"],
-            permission_classes=[IsAuthenticated, ProductPermission],
+            permission_classes=[IsAuthenticated, ProductSubAPIPermission],
             url_path="export/scsn_full_xml")
     def export_scsn_full_xml(self, request, *args, **kwargs):
+        """
+        Exports the product's PCF data to a full SCSN XML format with placeholders.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            FileResponse: A downloadable XML file containing full SCSN PCF data with placeholders.
+        """
         product = self.get_object()
         file = product.export_to_scsn_full_xml()
         LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS, changes_text="Exported to SCSN XML format (full)")
@@ -308,9 +407,20 @@ class ProductViewSet(
         }
     )
     @action(detail=True, methods=["get"],
-            permission_classes=[IsAuthenticated, ProductPermission],
+            permission_classes=[IsAuthenticated, ProductSubAPIPermission],
             url_path="export/zip")
     def export_zip(self, request, *args, **kwargs):
+        """
+        Exports the product's data as a ZIP archive containing files from other exporters.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            FileResponse: A downloadable ZIP archive of the product's data.
+        """
         product = self.get_object()
         file = product.export_to_zip()
         LogEntry.objects.log_create(instance=product, force_log=True, action=LogEntry.Action.ACCESS,
@@ -339,6 +449,21 @@ class ProductViewSet(
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="import/aas_aasx")
     def import_aas_aasx(self, request, *args, **kwargs):
+        """
+        Creates a new product by importing data from an uploaded AAS AASX file.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the AASX file.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: An HTTP 201 Created response with the serialized new product data.
+
+        Raises:
+            ValidationError: If no file or more than one file is uploaded.
+            UnsupportedMediaType: If the uploaded file has an invalid extension.
+        """
         # Ensure exactly one file was sent
         if 'file' not in request.FILES or len(request.FILES) != 1:
             raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
@@ -379,6 +504,21 @@ class ProductViewSet(
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="import/aas_json")
     def import_aas_json(self, request, *args, **kwargs):
+        """
+        Creates a new product by importing data from an uploaded AAS JSON file.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the JSON file.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: An HTTP 201 Created response with the serialized new product data.
+
+        Raises:
+            ValidationError: If no file or more than one file is uploaded.
+            UnsupportedMediaType: If the uploaded file has an invalid extension.
+        """
         # Ensure exactly one file was sent
         if 'file' not in request.FILES or len(request.FILES) != 1:
             raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
@@ -419,6 +559,21 @@ class ProductViewSet(
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="import/aas_xml")
     def import_aas_xml(self, request, *args, **kwargs):
+        """
+        Creates a new product by importing data from an uploaded AAS XML file.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the XML file.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: An HTTP 201 Created response with the serialized new product data.
+
+        Raises:
+            ValidationError: If no file or more than one file is uploaded.
+            UnsupportedMediaType: If the uploaded file has an invalid extension.
+        """
         # Ensure exactly one file was sent
         if 'file' not in request.FILES or len(request.FILES) != 1:
             raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
@@ -466,6 +621,17 @@ class ProductViewSet(
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/csv")
     def export_csv(self, request, *args, **kwargs):
+        """
+        Exports all products of the company to CSV format.
+
+        Args:
+            request (HttpRequest): The HTTP request object, possibly containing a 'template' query parameter.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            FileResponse: A downloadable CSV file containing product data or an empty template.
+        """
         # Check if template is requested
         if request.query_params.get("template", "false").lower() == "true":
             queryset = self.get_queryset()[:0]  # Empty queryset for template
@@ -506,6 +672,17 @@ class ProductViewSet(
             permission_classes=[IsAuthenticated, ProductPermission],
             url_path="export/xlsx")
     def export_xlsx(self, request, *args, **kwargs):
+        """
+        Exports all products of the company to XLSX format.
+
+        Args:
+            request (HttpRequest): The HTTP request object, possibly containing a 'template' query parameter.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            FileResponse: A downloadable XLSX file containing product data or an empty template.
+        """
         # Check if template is requested
         if request.query_params.get("template", "false").lower() == "true":
             queryset = self.get_queryset()[:0]  # Empty queryset for template
@@ -544,6 +721,21 @@ class ProductViewSet(
         filter_backends=[]
     )
     def import_tabular(self, request, *args, **kwargs):
+        """
+        Imports products from an uploaded tabular file (CSV, XLS, or XLSX).
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the tabular file.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: An HTTP 201 Created response with serialized new product data on success.
+
+        Raises:
+            ValidationError: If no file, more than one file, or import errors occur.
+            UnsupportedMediaType: If the uploaded file has an invalid extension.
+        """
         if 'file' not in request.FILES or len(request.FILES) != 1:
             raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
 
@@ -604,6 +796,17 @@ class ProductViewSet(
     )
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, ProductPermission])
     def ai(self, request, *args, **kwargs):
+        """
+        Generates and logs AI-driven recommendations to reduce a product's carbon emissions.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the user's prompt.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            Response: An HTTP 200 OK response with the serialized AI conversation log.
+        """
         product: Product = self.get_object()
         user = request.user
         # Use the serializer
@@ -642,8 +845,19 @@ class ProductViewSet(
         description="Retrieve the audit log entries for a specific product, its BoM and its emissions.",
         responses=AuditLogEntrySerializer(many=True),
     )
-    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, ProductPermission], url_path="audit")
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, ProductSubAPIPermission], url_path="audit")
     def audit(self, request, *args, **kwargs):
+        """
+        Retrieves audit log entries for a specific product, its Bill of Materials, and associated emissions.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the product's primary key.
+
+        Returns:
+            Response: An HTTP 200 OK response containing the serialized audit log entries.
+        """
         product = self.get_object()
 
         # 1. Product itself

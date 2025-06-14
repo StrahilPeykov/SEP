@@ -13,6 +13,9 @@ User = get_user_model()
 
 # Use built-in SimpleJWT view for token refresh
 class RefreshView(TokenRefreshView):
+    """
+    Handles refreshing an access token using a valid refresh token.
+    """
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -21,6 +24,21 @@ class RefreshView(TokenRefreshView):
         tags=["Authentication"],
     )
     def post(self, request, *args, **kwargs):
+        """
+        Refreshes the user's access token given a valid refresh token.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the refresh token.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: An HTTP 200 OK response with the new access token on success,
+                      or an HTTP 401 Unauthorized response on failure.
+
+        Raises:
+            AuthenticationFailed: If the user account associated with the token is deleted or deactivated.
+        """
         serializer = TokenRefreshSerializer(data=request.data)
 
         try:

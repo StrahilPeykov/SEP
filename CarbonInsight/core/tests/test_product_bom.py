@@ -1,3 +1,8 @@
+"""
+Tests for the Product BOM
+"""
+
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -68,200 +73,36 @@ class ProductAPITest(APITestCase):
             co_2_emission_factor_biogenic=0.01
         )
 
-    def test_transport_emission_linked_to_other_product_bom_item_detail(self):
-        bom_item_other = ProductBoMLineItem.objects.create(
-            parent_product=self.red_paint,
+    def test_emission_link_clean_method(self):
+        """
+        Test for trying to create a emission BoM link with different parent products test clean() and save() methods.
+        """
+
+        correct_bom_item = ProductBoMLineItem.objects.create(
+            parent_product=self.purple_paint,
             line_item_product=self.blue_paint,
             quantity=1
         )
-
-        transport_emission_other_product = TransportEmission.objects.create(
+        wrong_bom_item = ProductBoMLineItem.objects.create(
+            parent_product=self.magenta_paint,
+            line_item_product=self.blue_paint,
+            quantity=1
+        )
+        transport_emission = TransportEmission.objects.create(
             parent_product=self.purple_paint,
             distance=500.0,
             weight=100.0,
             reference=self.transport_ref_ship,
         )
-
-        EmissionBoMLink.objects.create(
-            emission=transport_emission_other_product,
-            line_item=bom_item_other
-        )
-
-        url = reverse(
-            "product-transport-emissions-detail",
-            args=[self.red_company.id, self.purple_paint.id, transport_emission_other_product.id]
-        )
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('line_items', response.data)
-        self.assertIsInstance(response.data['line_items'], list)
-        self.assertIn(bom_item_other.id, response.data['line_items'],
-                      f"BOM item ID {bom_item_other.id} unexpectedly not found in transport emission's line_items: {response.data['line_items']}.")
-
-    def test_transport_emission_linked_to_same_product_bom_item_detail(self):
-        bom_item = ProductBoMLineItem.objects.create(
-            parent_product=self.product_for_emission_linking_parent,
-            line_item_product=self.product_for_emission_linking_child,
-            quantity=1
-        )
-
-        transport_emission = TransportEmission.objects.create(
-            parent_product=self.product_for_emission_linking_child,
-            distance=200.0,
-            weight=50.0,
-            reference=self.transport_ref_ship,
-        )
-
-        EmissionBoMLink.objects.create(
-            emission=transport_emission,
-            line_item=bom_item
-        )
-
-        url = reverse(
-            "product-transport-emissions-detail",
-            args=[self.red_company.id, self.product_for_emission_linking_child.id, transport_emission.id]
-        )
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('line_items', response.data)
-        self.assertIsInstance(response.data['line_items'], list)
-        self.assertIn(bom_item.id, response.data['line_items'],
-                      f"BOM item ID {bom_item.id} not in transport emission's line_items.")
-
-    def test_user_energy_emission_linked_to_other_product_bom_item_id(self):
-        bom_item_other = ProductBoMLineItem.objects.create(
-            parent_product=self.red_paint,
-            line_item_product=self.blue_paint,
-            quantity=1
-        )
-
-        user_emission_other_product = UserEnergyEmission.objects.create(
-            parent_product=self.purple_paint,
-            energy_consumption=15.0,
-            reference=self.user_energy_ref
-        )
-
-        EmissionBoMLink.objects.create(
-            emission=user_emission_other_product,
-            line_item=bom_item_other
-        )
-
-        url = reverse(
-            "product-user-energy-emissions-detail",
-            args=[self.red_company.id, self.purple_paint.id, user_emission_other_product.id]
-        )
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('line_items', response.data)
-        self.assertIsInstance(response.data['line_items'], list)
-        self.assertIn(bom_item_other.id, response.data['line_items'],
-                         f"BOM item ID {bom_item_other.id} unexpectedly not found in user emission's line_items: {response.data['line_items']}.")
-
-    def test_user_energy_emission_linked_to_same_product_bom_item_id(self):
-
-        bom_item = ProductBoMLineItem.objects.create(
-            parent_product=self.product_for_emission_linking_parent,
-            line_item_product=self.product_for_emission_linking_child,
-            quantity=1
-        )
-
-        user_emission = UserEnergyEmission.objects.create(
-            parent_product=self.product_for_emission_linking_child,
-            energy_consumption=10.0,
-            reference=self.user_energy_ref
-        )
-
-        EmissionBoMLink.objects.create(
-            emission=user_emission,
-            line_item=bom_item
-        )
-
-        url = reverse(
-            "product-user-energy-emissions-detail",
-            args=[self.red_company.id, self.product_for_emission_linking_child.id, user_emission.id]
-        )
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('line_items', response.data)
-        self.assertIsInstance(response.data['line_items'], list)
-        self.assertIn(bom_item.id, response.data['line_items'],
-                      f"BOM item ID {bom_item.id} not in user emission's line_items.")
-
-    def test_production_energy_emission_linked_to_same_product_bom_item_id(self):
-
-        bom_item = ProductBoMLineItem.objects.create(
-            parent_product=self.product_for_emission_linking_parent,
-            line_item_product=self.product_for_emission_linking_child,
-            quantity=1
-        )
-
-        production_emission = ProductionEnergyEmission.objects.create(
-            parent_product=self.product_for_emission_linking_child,
-            energy_consumption=25.0,
-            reference=self.production_energy_ref
-        )
-
-        EmissionBoMLink.objects.create(
-            emission=production_emission,
-            line_item=bom_item
-        )
-
-        url = reverse(
-            "product-production-energy-emissions-detail",
-            args=[self.red_company.id, self.product_for_emission_linking_child.id, production_emission.id]
-        )
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('line_items', response.data)
-        self.assertIsInstance(response.data['line_items'], list)
-        self.assertIn(bom_item.id, response.data['line_items'],
-                      f"BOM item ID {bom_item.id} not in production emission's line_items.")
-
-    def test_production_energy_emission_linked_to_other_product_bom_item_id(self):
-
-        blue_company_user = User.objects.create_user(
-            username="blue@bluecompany.com", email="blue@bluecompany.com", password="passwordblue")
-        CompanyMembership.objects.create(user=blue_company_user, company=self.blue_company)
-        self.client.force_authenticate(user=blue_company_user)
-        url_blue_token = reverse("token_obtain_pair")
-        response_blue_token = self.client.post(
-            url_blue_token,
-            {"username": "blue@bluecompany.com", "password": "passwordblue"},
-            format="json"
-        )
-        self.assertEqual(response_blue_token.status_code, status.HTTP_200_OK)
-        access_token_blue = response_blue_token.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token_blue}")
-
-        bom_item_other = ProductBoMLineItem.objects.create(
-            parent_product=self.red_secret_plans,
-            line_item_product=self.blue_secret_plans,
-            quantity=1
-        )
-
-        production_emission_other_product = ProductionEnergyEmission.objects.create(
-            parent_product=self.magenta_paint,
-            energy_consumption=30.0,
-            reference=self.production_energy_ref
-        )
-
-        EmissionBoMLink.objects.create(
-            emission=production_emission_other_product,
-            line_item=bom_item_other
-        )
-
-        url = reverse(
-            "product-production-energy-emissions-detail",
-            args=[self.blue_company.id, self.magenta_paint.id, production_emission_other_product.id]
-        )
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('line_items', response.data)
-        self.assertIsInstance(response.data['line_items'], list)
-        self.assertIn(bom_item_other.id, response.data['line_items'],
-                         f"BOM item ID {bom_item_other.id} unexpectedly not found in production emission's line_items: {response.data['line_items']}.")
+        self.assertRaises(ValidationError, EmissionBoMLink.objects.create, **{
+            "emission": transport_emission,
+            "line_item": wrong_bom_item
+        })
 
     def test_get_product_list_bom(self):
+        """
+        Tests retrieving a list of Bill of Materials (BOM) items for a product.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
 
         ProductBoMLineItem.objects.create(
@@ -284,6 +125,9 @@ class ProductAPITest(APITestCase):
         self.assertIn("Blue paint", returned_items)
 
     def test_get_product_list_bom_other_company(self):
+        """
+        Tests attempting to retrieve a BOM list for a product belonging to a different company.
+        """
         url = reverse("product-bom-list", args=[self.blue_company.id, self.magenta_paint.id])
 
         ProductBoMLineItem.objects.create(
@@ -303,6 +147,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_get_product_list_bom_other_company_crashtest(self):
+        """
+        Tests attempting to retrieve a BOM list for a product not associated with the specified company ID.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.magenta_paint.id])
 
         ProductBoMLineItem.objects.create(
@@ -322,6 +169,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_specific_product_bom(self):
+        """
+        Tests retrieving a specific Bill of Materials (BOM) item for a product.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -355,6 +205,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response2.data["line_item_product"]["name"], "Blue paint")
 
     def test_get_specific_product_bom_not_found(self):
+        """
+        Tests attempting to retrieve a non-existent specific BOM item.
+        """
         url = reverse("product-bom-detail", args=[
             self.red_company.id,
             self.purple_paint.id,
@@ -365,6 +218,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_specific_product_bom_other_company(self):
+        """
+        Tests attempting to retrieve a specific BOM item for a product belonging to a different company.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -388,6 +244,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_get_specific_product_bom_other_company_crashtest(self):
+        """
+        Tests attempting to retrieve a specific BOM item for a product not associated with the specified company ID.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -411,6 +270,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_bom_line_item(self):
+        """
+        Tests creating a new Bill of Materials (BOM) line item for a product.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
         response = self.client.post(url, {
             "quantity": 1,
@@ -425,6 +287,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_create_bom_line_item_missing_quantity(self):
+        """
+        Tests attempting to create a BOM line item with a missing quantity.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
         response = self.client.post(url, {
             "line_item_product_id": self.red_paint.id
@@ -433,6 +298,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_bom_line_item_missing_line_item_product_id(self):
+        """
+        Tests attempting to create a BOM line item with a missing line item product ID.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
         response = self.client.post(url, {
             "quantity": 1
@@ -441,6 +309,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_bom_line_item_other_company(self):
+        """
+        Tests attempting to create a BOM line item for a product belonging to a different company, expecting a 403 Forbidden.
+        """
         url = reverse("product-bom-list", args=[self.blue_company.id, self.magenta_paint.id])
         response = self.client.post(url, {
             "quantity": 1,
@@ -455,6 +326,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_create_bom_line_item_other_company_crashtest(self):
+        """
+        Tests attempting to create a BOM line item for a product not associated with the specified company ID, expecting a 404 Not Found.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.magenta_paint.id])
         response = self.client.post(url, {
             "quantity": 1,
@@ -469,6 +343,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_update_bom_line_item_with_line_item_product_id_fail(self):
+        """
+        Tests attempting to update a BOM line item by changing its line item product ID, which should fail.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -502,6 +379,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(item1.quantity, initial_quantity) # Assert quantity did NOT update
 
     def test_update_bom_line_item_missing_quantity(self):
+        """
+        Tests attempting to update a BOM line item with a missing quantity, expecting a 400 Bad Request.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -526,6 +406,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_update_bom_line_item(self):
+        """
+        Tests successfully updating the quantity of a BOM line item.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -550,6 +433,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_update_bom_line_item_other_company(self):
+        """
+        Tests attempting to update a BOM line item belonging to a different company, expecting a 403 Forbidden.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -580,6 +466,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_update_bom_line_item_other_company_crashtest(self):
+        """
+        Tests attempting to update a BOM line item not associated with the specified company ID, expecting a 404 Not Found.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -610,6 +499,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_partial_update_bom_line_item(self):
+        """
+        Tests attempting to partially update a BOM line item by changing its line item product ID, which should fail.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -643,6 +535,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(item1.quantity, initial_quantity)
 
     def test_partial_update_bom_line_item_quantity_only(self):
+        """
+        Tests successfully performing a partial update on a BOM line item's quantity.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -672,6 +567,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_partial_update_bom_line_item_line_item_product_id_only(self):
+        """
+        Tests attempting to partially update a BOM line item by only changing its line item product ID, which should fail.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -704,6 +602,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(item1.quantity, initial_quantity)
 
     def test_partial_update_bom_line_item_other_company(self):
+        """
+        Tests attempting to partially update a BOM line item belonging to a different company, expecting a 403 Forbidden.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -734,6 +635,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_partial_update_bom_line_item_other_company_crashtest(self):
+        """
+        Tests attempting to partially update a BOM line item not associated with the specified company ID, expecting a 404 Not Found.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -764,6 +668,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_partial_update_bom_empty_req(self):
+        """
+        Tests performing a partial update on a BOM line item with an empty request, expecting no changes.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -787,6 +694,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_delete_bom_line_item(self):
+        """
+        Tests successfully deleting a BOM line item.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -808,6 +718,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_delete_bom_line_item_other_company(self):
+        """
+        Tests attempting to delete a BOM line item belonging to a different company, expecting a 403 Forbidden.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -829,6 +742,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_delete_bom_line_item_other_company_crashtest(self):
+        """
+        Tests attempting to delete a BOM line item not associated with the specified company ID, expecting a 404 Not Found.
+        """
         item1 = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.magenta_paint,
@@ -850,6 +766,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_create_bom_line_item_duplicate(self):
+        """
+        Tests attempting to create a duplicate BOM line item, expecting a 400 Bad Request.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
         response = self.client.post(url, {
             "quantity": 1,
@@ -876,6 +795,9 @@ class ProductAPITest(APITestCase):
         ).count(),1)
 
     def test_create_bom_line_item_recursive_error(self):
+        """
+        Tests attempting to create a recursive BOM line item, expecting a 400 Bad Request.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
         response = self.client.post(url, {
             "quantity": 1,
@@ -903,6 +825,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_create_bom_line_item_recursive_self_error(self):
+        """
+        Tests attempting to create a BOM line item where the product is its own component, expecting a 400 Bad Request.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.red_paint.id])
         response = self.client.post(url, {
             "quantity": 1,
@@ -917,6 +842,9 @@ class ProductAPITest(APITestCase):
         ).exists())
 
     def test_successful_put_update_bom_line_item_quantity(self):
+        """
+        Tests successfully updating a BOM line item's quantity using a PUT request.
+        """
         item = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint, # Belongs to red_company
             parent_product=self.purple_paint, # Belongs to red_company
@@ -947,7 +875,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(item.line_item_product_id, initial_line_item_product_id)
 
     def test_successful_patch_update_bom_line_item_quantity(self):
-
+        """
+        Tests successfully updating a BOM line item's quantity using a PATCH request.
+        """
         item = ProductBoMLineItem.objects.create(
             line_item_product=self.red_paint,
             parent_product=self.purple_paint,
@@ -978,6 +908,9 @@ class ProductAPITest(APITestCase):
         self.assertEqual(item.line_item_product_id, initial_line_item_product_id)
 
     def test_create_bom_line_item_without_line_item_product_id(self):
+        """
+        Tests attempting to create a BOM line item without specifying a line item product ID.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
         data = {
             "quantity": 3
@@ -993,6 +926,9 @@ class ProductAPITest(APITestCase):
         self.assertTrue(found_line_item_error, f"'line_item_product' required error not found in {response.data['errors']}")
 
     def test_successful_create_bom_line_item(self):
+        """
+        Tests successfully creating a new BOM line item.
+        """
         url = reverse("product-bom-list", args=[self.red_company.id, self.purple_paint.id])
         data = {
             "quantity": 5,

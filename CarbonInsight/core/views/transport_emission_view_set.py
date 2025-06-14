@@ -113,16 +113,31 @@ class TransportEmissionViewSet(
     EmissionImportExportMixin,
     viewsets.ModelViewSet
 ):
+    """
+    Manages CRUD operations and import/export for transport emissions linked to a product.
+    """
     queryset = TransportEmission.objects.all()
     serializer_class = TransportEmissionSerializer
     permission_classes = [permissions.IsAuthenticated, ProductSubAPIPermission]
     emission_import_export_resource = TransportEmissionResource
 
     def get_queryset(self):
+        """
+        Retrieves the queryset of transport emissions filtered by the parent product.
+
+        Returns:
+            QuerySet: A queryset of TransportEmission instances related to the product.
+        """
         product = self.get_parent_product()
         qs = TransportEmission.objects.filter(parent_product=product)
         return qs
 
     def perform_create(self, serializer):
+        """
+        Performs the creation of a new transport emission, associating it with the parent product.
+
+        Args:
+            serializer (TransportEmissionSerializer): The serializer instance containing validated data.
+        """
         product = self.get_parent_product()
         serializer.save(parent_product=product)

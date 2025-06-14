@@ -7,6 +7,10 @@ User = get_user_model()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the User registration.
+    """
+
     password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
@@ -15,6 +19,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ("first_name", "last_name", "email", "password", "confirm_password")
 
     def validate(self, attrs):
+        """
+        Checks if the password and confirm_password are equal and if the password matches minimum password requirements.
+
+        Args:
+            attrs (dict): RegisterSerializer data
+        Raises:
+            ValidationError
+        Returns:
+            attrs (dict): RegisterSerializer data
+        """
+
         # Check if passwords match
         if attrs.get("password") != attrs.get("confirm_password"):
             raise serializers.ValidationError({
@@ -32,6 +47,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        """
+        Creates a new user with the provided data.
+
+        Args:
+            validated_data (dict): RegisterSerializer data
+        Returns:
+            created User
+        """
+
         # Remove confirm_password from validated data
         validated_data.pop("confirm_password", None)
         

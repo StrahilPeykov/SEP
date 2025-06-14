@@ -23,6 +23,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 class Product(models.Model):
+    """
+    Class that models a product
+    """
+
     name = models.CharField(max_length=255)
     supplier = models.ForeignKey(
         "Company",
@@ -54,6 +58,16 @@ class Product(models.Model):
     is_public = models.BooleanField(default=True)
 
     def request(self, requester: "Company", user: "User") -> "ProductSharingRequest":
+        """
+        Creates a product sharing request
+
+        Args:
+            requester: Company object
+            user: User object
+        Returns:
+            created ProductSharingRequest object
+        """
+
         # Block requests to your own company
         if requester == self.supplier:
             raise ValueError("You cannot request access to your own product.")
@@ -66,6 +80,13 @@ class Product(models.Model):
         )
 
     def get_emission_trace(self) -> EmissionTrace:
+        """
+        Calculates the PCF and returns a tree structured trace for emission that is to be used in DPP
+
+        Returns:
+            object of type EmissionTrace for this Product
+        """
+
         root = EmissionTrace(
             label=f"Product: {self.name}",
             methodology=f"Sum up all the product-level emissions and its line items' emissions.",
@@ -130,13 +151,14 @@ class Product(models.Model):
                 emission_trace = line_item.line_item_product.get_emission_trace()
                 # Hide the children
                 emission_trace.children.clear()
-                emission_trace.mentions.append(
-                    EmissionTraceMention(
-                        mention_class=EmissionTraceMentionClass.INFORMATION,
-                        message=f"Further emission trace details are hidden to protect "
-                                f"{line_item.line_item_product.supplier.name}'s confidentiality."
+                if not line_item.line_item_product.supplier.is_reference:
+                    emission_trace.mentions.append(
+                        EmissionTraceMention(
+                            mention_class=EmissionTraceMentionClass.INFORMATION,
+                            message=f"Further emission trace details are hidden to protect "
+                                    f"{line_item.line_item_product.supplier.name}'s confidentiality."
+                        )
                     )
-                )
 
             # Add the line item to the root
             root.children.add(EmissionTraceChild(
@@ -185,10 +207,21 @@ class Product(models.Model):
     export_to_scsn_pcf_xml = product_to_scsn_pcf_xml
     export_to_zip = product_to_zip
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        __str__ override that returns the name of the Product.
+
+        Returns:
+            name of the Product
+        """
+
         return self.name
 
 class ProductEmissionOverrideFactor(models.Model):
+    """
+    Model representing the override that the emission can have which changes the total emission returned.
+    """
+
     product = models.ForeignKey(
         "Product",
         on_delete=models.CASCADE,

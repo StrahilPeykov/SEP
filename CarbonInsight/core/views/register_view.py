@@ -21,10 +21,24 @@ class RegisterView(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet
 ):
+    """
+    Handles user registration, creating new user accounts and returning authentication tokens.
+    """
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        """
+        Creates a new user account and provides access and refresh tokens upon successful registration.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing user registration data.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: An HTTP 201 Created response with user data, access, and refresh tokens.
+        """
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         user = ser.save()

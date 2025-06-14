@@ -1,3 +1,7 @@
+"""
+Tests for production energy emission API
+"""
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -42,6 +46,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         )
 
     def test_create_production_emission_unauthenticated(self):
+        """
+        Test for adding production energy emission to a product without logging in.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-production-energy-emissions-list",
@@ -56,6 +64,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_production_emission_authenticated_authorized(self):
+        """
+        Test for adding production energy emission to a product that the user's company owns.
+        """
+
         url = reverse(
             "product-production-energy-emissions-list",
             args=[self.red_company.id, self.red_paint.id]
@@ -70,6 +82,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(ProductionEnergyEmission.objects.count(), 3)
 
     def test_create_production_emission_authenticated_unauthorized(self):
+        """
+        Test for adding production energy emission to a product that the user's company does not own.
+        """
+
         url = reverse(
             "product-production-energy-emissions-list",
             args=[self.green_company.id, self.green_paint.id]
@@ -83,6 +99,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_production_emission_invalid_data(self):
+        """
+        Test for adding production energy emission with invalid data.
+        """
+
         url = reverse(
             "product-production-energy-emissions-list",
             args=[self.red_company.id, self.red_paint.id]
@@ -96,6 +116,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_get_production_emissions_list_unauthenticated(self):
+        """
+        Test for getting production energy emissions list without logging in.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-production-energy-emissions-list",
@@ -105,6 +129,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_production_emissions_list_authenticated_authorized(self):
+        """
+        Test for getting the production energy emissions list for a product that the user's company owns.
+        """
+
         url = reverse(
             "product-production-energy-emissions-list",
             args=[self.red_company.id, self.red_paint.id]
@@ -115,6 +143,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.data[0]["id"], self.existing_prod_emission_red_product.id)
 
     def test_get_production_emissions_list_authenticated_unauthorized(self):
+        """
+        Test for getting the production energy emissions list for a product that the user's company does not own.
+        """
+
         url = reverse(
             "product-production-energy-emissions-list",
             args=[self.green_company.id, self.green_paint.id]
@@ -123,6 +155,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_get_production_emission_detail_unauthenticated(self):
+        """
+        Test for getting the details of a specific production energy emission when not logged in.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-production-energy-emissions-detail",
@@ -132,6 +168,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_production_emission_detail_authenticated_authorized(self):
+        """
+        Test for getting the details of a specific production energy emission of a product that the user's company owns.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_prod_emission_red_product.id]
@@ -141,6 +181,11 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.data["id"], self.existing_prod_emission_red_product.id)
 
     def test_get_production_emission_detail_authenticated_unauthorized(self):
+        """
+        Test for getting the details of a specific production energy emission of a product that the user's company does
+         not own.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.green_company.id, self.green_paint.id, self.existing_prod_emission_green_product.id]
@@ -149,6 +194,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_put_production_emission_unauthenticated(self):
+        """
+        Test for modifying a production energy emission without logging in with a put request.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-production-energy-emissions-detail",
@@ -163,6 +212,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_put_production_emission_authenticated_authorized(self):
+        """
+        Test for modifying a production energy emission of a product that the user's company owns with a put request.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_prod_emission_red_product.id]
@@ -178,6 +231,11 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(self.existing_prod_emission_red_product.energy_consumption, 250.0)
 
     def test_put_production_emission_authenticated_unauthorized(self):
+        """
+        Test for modifying a production energy emission of a product that the user's company does not own with a put
+         request.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.green_company.id, self.green_paint.id, self.existing_prod_emission_green_product.id]
@@ -191,6 +249,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_patch_production_emission_unauthenticated(self):
+        """
+        Test for modifying a production energy emission without logging in with a patch request.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-production-energy-emissions-detail",
@@ -201,6 +263,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_patch_production_emission_authenticated_authorized(self):
+        """
+        Test for modifying a production energy emission of a product that the user's company owns with a patch request.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_prod_emission_red_product.id]
@@ -212,6 +278,11 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(self.existing_prod_emission_red_product.energy_consumption, 220.0)
 
     def test_patch_production_emission_authenticated_unauthorized(self):
+        """
+        Test for modifying a production energy emission of a product that the user's company does not own with a patch
+         request.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.green_company.id, self.green_paint.id, self.existing_prod_emission_green_product.id]
@@ -221,6 +292,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_production_emission_unauthenticated(self):
+        """
+        Test for deleting a production energy emission without logging in.
+        """
+
         self.client.credentials()
         url = reverse(
             "product-production-energy-emissions-detail",
@@ -231,6 +306,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(ProductionEnergyEmission.objects.count(), 2)
 
     def test_delete_production_emission_authenticated_authorized(self):
+        """
+        Test for deleting a production energy emission of a product that the user's company owns.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.red_company.id, self.red_paint.id, self.existing_prod_emission_red_product.id]
@@ -240,6 +319,10 @@ class ProductionEnergyEmissionAPITests(APITestCase):
         self.assertEqual(ProductionEnergyEmission.objects.count(), 1)
 
     def test_delete_production_emission_authenticated_unauthorized(self):
+        """
+        Test for deleting a production energy emission of a product that the user's company does not own.
+        """
+
         url = reverse(
             "product-production-energy-emissions-detail",
             args=[self.green_company.id, self.green_paint.id, self.existing_prod_emission_green_product.id]

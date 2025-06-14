@@ -26,6 +26,13 @@ class PcfCalculationMethod(models.TextChoices):
     OTHER = "Other", "Other"
 
     def get_aas_value(self) -> str:
+        """
+        Returns the AAS-compatible value of a pcf calculation method.
+
+        Returns:
+            AAS-compatible value of the pcf calculation method
+        """
+
         match self:
             case PcfCalculationMethod.EN_15804:
                 return "EN 15804"
@@ -65,6 +72,13 @@ class PcfCalculationMethod(models.TextChoices):
                 return "Other"
 
     def get_aas_value_id(self) -> str:
+        """
+        Returns the AAS-compatible value ID of a pcf calculation method.
+
+        Returns:
+            AAS-compatible value ID of the pcf calculation method
+        """
+
         match self:
             case PcfCalculationMethod.EN_15804:
                 return "0173-1#07-ABU223#003"
@@ -107,6 +121,9 @@ class PcfCalculationMethod(models.TextChoices):
     def from_aas_value_id(aas_value_id: str) -> "PcfCalculationMethod":
         """
         Converts an AAS value ID to a PcfCalculationMethod value.
+
+        Returns:
+            PCF calculation method corresponding to the AAS value ID, or PcfCalculationMethod.OTHER if not found.
         """
         for stage in PcfCalculationMethod:
             if stage.get_aas_value_id() == aas_value_id:

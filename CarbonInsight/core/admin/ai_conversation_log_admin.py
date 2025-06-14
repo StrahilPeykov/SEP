@@ -5,6 +5,10 @@ from core.models import Company, CompanyMembership, Product, AIConversationLog
 
 @admin.register(AIConversationLog)
 class AIConversationLogAdmin(admin.ModelAdmin):
+    """
+    Defines the fields to be presented and how they are shown in the admin panel for AIConversationLog.
+    """
+
     model = Company
     list_display = ("user", "product", "created_at",)
     search_fields = ("user__username", "product__name", "user_prompt", "response",)

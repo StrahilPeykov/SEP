@@ -1,3 +1,7 @@
+"""
+Tests user's password change API
+"""
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -12,6 +16,9 @@ class ChangePasswordAPITest(APITestCase):
         paint_companies_setup(self)
 
     def test_change_password_bad_old_password(self):
+        """
+        Test for an unsuccessful password change where the old provided old password is wrong.
+        """
         url = reverse("change_password")
 
         response = self.client.post(
@@ -25,6 +32,9 @@ class ChangePasswordAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_change_password_bad_new_password(self):
+        """
+        Test for an unsuccessful password change where the new password is not up to safety standards.
+        """
         url = reverse("change_password")
 
         response = self.client.post(
@@ -38,6 +48,11 @@ class ChangePasswordAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_change_password_bad_new_password_confirm(self):
+        """
+        Test for an unsuccessful password change where the new password confirmation entry does not match the new
+         password.
+        """
+
         url = reverse("change_password")
 
         response = self.client.post(
@@ -51,6 +66,10 @@ class ChangePasswordAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_change_password_good_new_password(self):
+        """
+        Test for a successful password change.
+        """
+
         url = reverse("change_password")
         url2 = reverse("token_obtain_pair")
 

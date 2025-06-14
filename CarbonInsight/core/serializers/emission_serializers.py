@@ -9,6 +9,10 @@ from core.serializers.reference_serializers import ProductionEnergyEmissionRefer
 
 
 class EmissionOverrideFactorSerializer(serializers.ModelSerializer):
+    """
+    Serializer for EmissionOverrideFactor.
+    """
+
     # allow DRF-Writable-Nested to match existing records on update
     id = serializers.IntegerField(required=False)
 
@@ -17,6 +21,10 @@ class EmissionOverrideFactorSerializer(serializers.ModelSerializer):
         fields = ("id", "lifecycle_stage", "co_2_emission_factor_biogenic", "co_2_emission_factor_non_biogenic")
 
 class TransportEmissionSerializer(WritableNestedModelSerializer):
+    """
+    Serializer for TransportEmission.
+    """
+
     override_factors = EmissionOverrideFactorSerializer(many=True, required=False)
     line_items = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -31,6 +39,10 @@ class TransportEmissionSerializer(WritableNestedModelSerializer):
         fields = ("id", "distance", "weight", "reference", "reference_details", "override_factors", "line_items")
 
 class UserEnergyEmissionSerializer(WritableNestedModelSerializer):
+    """
+    Serializer for UserEnergyEmission.
+    """
+
     override_factors = EmissionOverrideFactorSerializer(many=True, required=False)
     line_items = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -45,6 +57,10 @@ class UserEnergyEmissionSerializer(WritableNestedModelSerializer):
         fields = ("id", "energy_consumption", "reference", "reference_details", "override_factors", "line_items")
 
 class ProductionEnergyEmissionSerializer(WritableNestedModelSerializer):
+    """
+    Serializer for ProductionEnergyEmission.
+    """
+
     override_factors = EmissionOverrideFactorSerializer(many=True, required=False)
     line_items = serializers.PrimaryKeyRelatedField(
         many=True,

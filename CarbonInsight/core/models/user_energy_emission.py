@@ -9,6 +9,10 @@ from .reference_impact_unit import ReferenceImpactUnit
 
 
 class UserEnergyEmission(Emission):
+    """
+    Class that models a production energy emission.
+    """
+
     energy_consumption = models.FloatField(
         validators=[MinValueValidator(0.0)],
         help_text="Energy consumption in kWh",
@@ -22,6 +26,13 @@ class UserEnergyEmission(Emission):
     )
 
     def _get_emission_trace(self) -> EmissionTrace:
+        """
+        _get_emission_trace override from Emission class, calculates the EmissionTrace of the UserEnergyEmission.
+
+        Returns:
+            generated EmissionTrace object for this user energy emission
+        """
+
         if self.reference is None:
             reference_multiplied_factor = EmissionTrace(
                 label="User energy consumption emission",
@@ -40,15 +51,33 @@ class UserEnergyEmission(Emission):
         verbose_name = "User energy emission"
         verbose_name_plural = "User energy emissions"
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        __str__ override that returns the energy consumption in kWh and the Product name the emission is attached to.
+
+        Returns:
+            Energy consumption in kWh and the Product name the emission is attached to.
+        """
+
         return f"{self.energy_consumption}kWh (User energy) for {self.parent_product.name}"
 
 class UserEnergyEmissionReference(models.Model):
+    """
+    Class that models a user energy emission reference.
+    """
+
     common_name  = models.CharField(max_length=255, null=True, blank=True)
     technical_name = models.CharField(max_length=255, null=True, blank=True)
 
     @property
     def name(self) -> str:
+        """
+        Returns the common name and the technical name for the UserEnergyEmissionReference.
+
+        Returns:
+            Common name and the technical name for the UserEnergyEmissionReference
+        """
+
         if self.common_name is not None:
             return self.common_name
         if self.technical_name is not None:
@@ -66,6 +95,13 @@ class UserEnergyEmissionReference(models.Model):
         ]
 
     def get_emission_trace(self) -> EmissionTrace:
+        """
+        Calculates the PCF and returns a tree structured trace for emission that is to be used in DPP
+
+        Returns:
+            generated object of type EmissionTrace for this user energy emission
+        """
+
         root = EmissionTrace(
             label=f"Reference values for {self.name}",
             methodology=f"Database lookup",
@@ -85,10 +121,22 @@ class UserEnergyEmissionReference(models.Model):
         return root
     get_emission_trace.short_description = "Emissions trace"
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        __str__ override that returns the name of the UserEnergyEmissionReference
+
+        Returns:
+            Name of the UserEnergyEmissionReference
+        """
+
         return self.name
 
 class UserEnergyEmissionReferenceFactor(models.Model):
+    """
+    Class that models a user energy emission reference factor which holds a lifecycle stage and emissions for the
+     lifecycle stage.
+    """
+
     emission_reference = models.ForeignKey(
         "UserEnergyEmissionReference",
         on_delete=models.CASCADE,

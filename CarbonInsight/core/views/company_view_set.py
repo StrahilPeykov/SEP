@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from core.models import Company, CompanyMembership, Product
 from core.permissions import IsCompanyMember, CanEditCompany
 from core.serializers.audit_log_entry_serializer import AuditLogEntrySerializer
-from core.serializers.company_serializer import CompanySerializer
+from core.serializers.company_serializer import CompanyDetailSerializer, CompanyListSerializer
 from core.serializers.user_serializer import UserUsernameSerializer, UserSerializer
 from core.views.mixins.company_mixin import CompanyMixin
 
@@ -60,19 +60,30 @@ User = get_user_model()
     ),
 )
 class CompanyViewSet(viewsets.ModelViewSet):
+    """
+    Manages CRUD operations for Company objects, including filtering and search.
+    """
     queryset = Company.objects.filter(is_reference=False)
-    serializer_class = CompanySerializer
+    serializer_class = CompanyDetailSerializer
     permission_classes = [IsAuthenticated, CanEditCompany]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['name', 'vat_number', 'business_registration_number']
     search_fields = ['name', 'vat_number', 'business_registration_number']
 
     def get_serializer_class(self):
+        """
+        Determines the appropriate serializer class based on the current action.
+        """
+        if self.action in ['list']:
+            return CompanyListSerializer
         if self.action in ['audit']:
             return AuditLogEntrySerializer
         return super().get_serializer_class()
 
     def get_object(self):
+        """
+        Retrieves a Company instance, supporting lookup by 'reference' for the singular reference company.
+        """
         raw_pk = self.kwargs["pk"]
         if raw_pk == "reference":
             # Look up the one reference company
@@ -85,6 +96,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return super().get_object()
 
     def perform_create(self, serializer):
+        """
+        Creates a new Company and automatically assigns the requesting user as a member.
+        """
         company = serializer.save()
         user = self.request.user
         membership, created = CompanyMembership.objects.get_or_create(user=user, company=company)
@@ -98,8 +112,19 @@ class CompanyViewSet(viewsets.ModelViewSet):
         description="Retrieve the audit log entries for a specific company and its products. ",
         responses=AuditLogEntrySerializer(many=True),
     )
-    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, CanEditCompany], url_path="audit")
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated, IsCompanyMember], url_path="audit")
     def audit(self, request, *args, **kwargs):
+        """
+        Retrieves audit log entries for a specific company and its associated products.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments, including the company's primary key.
+
+        Returns:
+            Response: An HTTP 200 OK response containing the serialized audit log entries.
+        """
         company = self.get_object()
 
         # 1. Company itself
@@ -153,6 +178,9 @@ class CompanyUserViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
+    """
+    Manages user memberships within a specific company.
+    """
     serializer_class = UserUsernameSerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
     filter_backends = [DjangoFilterBackend, SearchFilter]
@@ -160,17 +188,34 @@ class CompanyUserViewSet(
     search_fields = ['username', 'email', 'first_name', 'last_name']
 
     def get_serializer_class(self):
+        """
+        Selects the appropriate serializer for listing or managing company users.
+        """
         if self.action == "list":
             return UserSerializer
         return super().get_serializer_class()
 
     def get_queryset(self):
+        """
+        Returns the queryset of users belonging to the parent company, or an empty queryset for anonymous users.
+        """
         if self.request.user.is_anonymous:
             # For unauthenticated users, return an empty queryset
             return User.objects.none()
         return self.get_parent_company().users.all()
 
     def create(self, request, *args, **kwargs):
+        """
+        Adds a user to the specified company, logging the action.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing the username to add.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: An HTTP 201 Created response upon successful user addition.
+        """
         try:
             user = User.objects.get(username=request.data.get('username'))
         except User.DoesNotExist:
@@ -181,6 +226,17 @@ class CompanyUserViewSet(
         return Response(status=status.HTTP_201_CREATED)
 
     def destroy(self, request, pk=None, company_pk=None):
+        """
+        Removes a user from the specified company, logging the action.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            pk (int): The primary key of the user to remove.
+            company_pk (int): The primary key of the company.
+
+        Returns:
+            Response: An HTTP 204 No Content response upon successful user removal.
+        """
         try:
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:
@@ -205,13 +261,19 @@ class MyCompaniesViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    serializer_class = CompanySerializer
+    """
+    Provides a list of companies that the currently authenticated user is a member of.
+    """
+    serializer_class = CompanyListSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["name", "vat_number", "business_registration_number"]
     search_fields = ["name", "vat_number", "business_registration_number"]
 
     def get_queryset(self):
+        """
+        Filters the companies to return only those associated with the current authenticated user.
+        """
         if self.request.user.is_anonymous:
             # This if is needed for the schema generation
             return Company.objects.none()

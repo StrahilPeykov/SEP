@@ -19,6 +19,13 @@ class ReferenceImpactUnit(models.TextChoices):
     OTHER = "Other", "Other"
 
     def get_aas_value(self) -> str:
+        """
+        Returns the AAS-compatible shorthand name of the ReferenceImpactUnit.
+
+        Returns:
+            AAS-compatible shorthand name of the ReferenceImpactUnit
+        """
+
         match self:
             case ReferenceImpactUnit.GRAM:
                 return "g"
@@ -42,6 +49,13 @@ class ReferenceImpactUnit(models.TextChoices):
                 return "Other"
 
     def get_aas_value_id(self) -> str:
+        """
+        Returns the AAS-compatible value ID of the ReferenceImpactUnit.
+
+        Returns:
+            AAS-compatible value ID of the ReferenceImpactUnit
+        """
+
         match self:
             case ReferenceImpactUnit.GRAM:
                 return "0173-1#07-ABZ596#003"

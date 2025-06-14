@@ -9,6 +9,7 @@ from import_export.results import RowResult
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, UnsupportedMediaType
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -79,7 +80,7 @@ class EmissionImportExportMixin:
         validator = FileExtensionValidator(allowed_extensions=allowed)
         try:
             validator(uploaded)
-        except ValidationError:
+        except DjangoValidationError:
             raise UnsupportedMediaType("Invalid file extension. Only .csv, .xls, .xlsx are allowed.")
 
         # Read raw bytes and determine format

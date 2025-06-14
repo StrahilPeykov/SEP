@@ -1,6 +1,9 @@
 from django.db import models
 
 class AIConversationLog(models.Model):
+    """
+    Model for AI advice chatlogs
+    """
     user = models.ForeignKey(
         "User",
         on_delete=models.CASCADE,

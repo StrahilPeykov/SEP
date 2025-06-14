@@ -1,3 +1,7 @@
+"""
+This file contains the generic setup functions of test cases that that are called in tests setups and extended if needed
+"""
+
 from django.urls import reverse
 from rest_framework import status
 from core.models import User, EmissionBoMLink, ProductBoMLineItem, Product, CompanyMembership, Company
@@ -11,6 +15,10 @@ from core.models import EmissionOverrideFactor
 
 
 def paint_companies_setup(self):
+    """
+    Generic setup function that consists of Paint companies. Simpler setup
+    """
+
     # Create two users
     self.red_company_user1 = User.objects.create_user(username="1@redcompany.com", email="1@redcompany.com",
                                                       password="1234567890")
@@ -183,6 +191,10 @@ def paint_companies_setup(self):
     )
 
 def tech_companies_setup(self):
+    """
+    Generic setup function that consists of Tech companies. More complex setup
+    """
+
     admin_user = User.objects.create_user(username="admin@example.com", email="admin@example.com",
                                           password="1234567890")
     admin_user.is_superuser = True

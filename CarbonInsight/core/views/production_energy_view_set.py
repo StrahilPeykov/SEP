@@ -1,6 +1,6 @@
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import viewsets, permissions
-from drf_spectacular.utils import extend_schema, extend_schema_view, extend_schema_field, OpenApiParameter
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework.generics import get_object_or_404
 
 from core.models import Company, Product
@@ -112,16 +112,31 @@ class ProductionEnergyEmissionViewSet(
     EmissionImportExportMixin,
     viewsets.ModelViewSet
 ):
+    """
+    Manages CRUD operations and import/export for production energy emissions linked to a product.
+    """
     queryset = ProductionEnergyEmission.objects.all()
     serializer_class = ProductionEnergyEmissionSerializer
     permission_classes = [permissions.IsAuthenticated, ProductSubAPIPermission]
     emission_import_export_resource = ProductionEnergyEmissionResource
 
     def get_queryset(self):
+        """
+        Retrieves the queryset of production energy emissions filtered by the parent product.
+
+        Returns:
+            QuerySet: A queryset of ProductionEnergyEmission instances related to the product.
+        """
         product = self.get_parent_product()
         qs = ProductionEnergyEmission.objects.filter(parent_product=product)
         return qs
 
     def perform_create(self, serializer):
+        """
+        Performs the creation of a new production energy emission, associating it with the parent product.
+
+        Args:
+            serializer (ProductionEnergyEmissionSerializer): The serializer instance containing validated data.
+        """
         product = self.get_parent_product()
         serializer.save(parent_product=product)

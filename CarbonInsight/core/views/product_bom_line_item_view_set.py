@@ -81,14 +81,29 @@ class ProductBoMLineItemViewSet(
     ProductMixin,
     viewsets.ModelViewSet
 ):
+    """
+    Manages CRUD operations for Bill of Materials (BoM) line items associated with a product.
+    """
     queryset = ProductBoMLineItem.objects.none()
     serializer_class = ProductBoMLineItemSerializer
     permission_classes = [IsAuthenticated, ProductSubAPIPermission]
 
     def get_queryset(self):
+        """
+        Retrieves the queryset of BoM line items filtered by the parent product.
+
+        Returns:
+            QuerySet: A queryset of ProductBoMLineItem instances related to the parent product.
+        """
         product = self.get_parent_product()
         return ProductBoMLineItem.objects.filter(parent_product=product)
 
     def perform_create(self, serializer):
+        """
+        Performs the creation of a new BoM line item, associating it with the parent product.
+
+        Args:
+            serializer (ProductBoMLineItemSerializer): The serializer instance containing validated data for the new line item.
+        """
         product = self.get_parent_product()
         serializer.save(parent_product=product)

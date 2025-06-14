@@ -115,16 +115,31 @@ class UserEnergyEmissionViewSet(
     EmissionImportExportMixin,
     viewsets.ModelViewSet
 ):
+    """
+    Manages CRUD operations and import/export for user energy emissions linked to a product.
+    """
     queryset = UserEnergyEmission.objects.all()
     serializer_class = UserEnergyEmissionSerializer
     permission_classes = [permissions.IsAuthenticated, ProductSubAPIPermission]
     emission_import_export_resource = UserEnergyEmissionResource
 
     def get_queryset(self):
+        """
+        Retrieves the queryset of user energy emissions filtered by the parent product.
+
+        Returns:
+            QuerySet: A queryset of UserEnergyEmission instances related to the product.
+        """
         product = self.get_parent_product()
         qs = UserEnergyEmission.objects.filter(parent_product=product)
         return qs
 
     def perform_create(self, serializer):
+        """
+        Performs the creation of a new user energy emission, associating it with the parent product.
+
+        Args:
+            serializer (UserEnergyEmissionSerializer): The serializer instance containing validated data.
+        """
         product = self.get_parent_product()
         serializer.save(parent_product=product)

@@ -14,6 +14,10 @@ from .lifecycle_stage import LifecycleStage
 logger = logging.getLogger(__name__)
 
 class ProductBoMLineItem(models.Model):
+    """
+    Class modeling the link between product and the sub-product used in the parent product.
+    """
+
     parent_product = models.ForeignKey(
         "Product",
         on_delete=models.CASCADE,
@@ -29,11 +33,25 @@ class ProductBoMLineItem(models.Model):
     )
 
     def clean(self):
+        """
+        Raises a validation error if the ProductBoMLineItem creates a cyclical dependency.
+
+        Raises:
+            ValidationError
+        """
+
         super().clean()
         if self._creates_cycle():
             raise ValidationError("Cycle detected in BoM: this would create a loop")
 
     def _creates_cycle(self) -> bool:
+        """
+        Checks if the ProductBoMLineItem creates a cyclical dependency.
+
+        Returns:
+            True if the ProductBoMLineItem creates a cyclical dependency in the database.
+        """
+
         start = self.parent_product
         target = self.line_item_product
         visited = set()
@@ -68,17 +86,39 @@ class ProductBoMLineItem(models.Model):
             )
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        __str__ override that returns the Product name, sub-product name and the quantity of the sub-product as string.
+
+        Returns:
+            Product name, sub-product name and the quantity of the sub-product.
+        """
+
         return f"{self.parent_product.name}/{self.line_item_product.name} x{self.quantity}"
 
     @property
     def product_sharing_request(self) -> Optional[ProductSharingRequest]:
+        """
+        Returns the product sharing request for the sub-product.
+
+        Returns:
+            ProductSharingRequest object
+        """
+
         return self.line_item_product.product_sharing_requests.filter(
             requester=self.parent_product.supplier
         ).first()
 
     @property
     def product_sharing_request_status(self) -> ProductSharingRequestStatus:
+        """
+        Returns the product sharing request status for the sub-product. Returns ProductSharingRequestStatus.ACCEPTED
+         if the auto approve flag is set or if the parent product and child product are made by the same Company.
+
+        Returns:
+            ProductSharingRequestStatus
+        """
+
         if self.line_item_product.supplier.auto_approve_product_sharing_requests:
             return ProductSharingRequestStatus.ACCEPTED
         if self.line_item_product.supplier == self.parent_product.supplier:
