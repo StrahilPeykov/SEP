@@ -20,3 +20,5 @@ aas-test-engines~=1.0.2
 django-import-export[all]~=4.3.7
 rapidfuzz~=3.13.0
 django-auditlog~=3.1.2
+gunicorn~=21.2.0
+psycopg2-binary~=2.9.9  # For PostgreSQL on Railway

@@ -10,26 +10,40 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# Production/Railway environment detection
+RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT_NAME')
+IS_PRODUCTION = RAILWAY_ENVIRONMENT == 'production' or os.environ.get('RAILWAY_PUBLIC_DOMAIN') is not None
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-yq+7de17fa&(8wz#+_$mru=lfe-=t_@)!uwe)2fg@y-iqs+cce"
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', "django-insecure-yq+7de17fa&(8wz#+_$mru=lfe-=t_@)!uwe)2fg@y-iqs+cce")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = not IS_PRODUCTION
 
-ALLOWED_HOSTS = ["*"]
+# Railway provides RAILWAY_PUBLIC_DOMAIN
+RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN')
+
+if IS_PRODUCTION:
+    ALLOWED_HOSTS = [
+        RAILWAY_PUBLIC_DOMAIN,
+        'localhost',
+        '127.0.0.1',
+        '.railway.app',  # Allow all Railway subdomains
+    ]
+    if RAILWAY_PUBLIC_DOMAIN:
+        ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+else:
+    ALLOWED_HOSTS = ["*"]
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -104,17 +118,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "CarbonInsight.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if IS_PRODUCTION:
+    # Railway PostgreSQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('PGDATABASE'),
+            'USER': os.environ.get('PGUSER'),
+            'PASSWORD': os.environ.get('PGPASSWORD'),
+            'HOST': os.environ.get('PGHOST'),
+            'PORT': os.environ.get('PGPORT', '5432'),
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
     }
-}
-
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -134,7 +162,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -145,7 +172,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -199,14 +225,36 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Next.js default port
-    "http://localhost:8000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8000",
-    "http://carboninsight.win.tue.nl",
-    "https://carboninsight.win.tue.nl",
-]
+# CORS settings
+if IS_PRODUCTION:
+    CORS_ALLOWED_ORIGINS = []
+    
+    # Add frontend domain if provided
+    if FRONTEND_DOMAIN:
+        if not FRONTEND_DOMAIN.startswith('http'):
+            CORS_ALLOWED_ORIGINS.extend([
+                f"https://{FRONTEND_DOMAIN}",
+                f"http://{FRONTEND_DOMAIN}",  # In case of dev
+            ])
+        else:
+            CORS_ALLOWED_ORIGINS.append(FRONTEND_DOMAIN)
+    
+    # Add common development URLs for testing
+    CORS_ALLOWED_ORIGINS.extend([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ])
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",  # Next.js default port
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+        "http://carboninsight.win.tue.nl",
+        "https://carboninsight.win.tue.nl",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
@@ -256,4 +304,85 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = "core.User"
 
-BASE_URL = "https://carboninsight.win.tue.nl"
+# Base URL setting
+if IS_PRODUCTION and RAILWAY_PUBLIC_DOMAIN:
+    BASE_URL = f"https://{RAILWAY_PUBLIC_DOMAIN}"
+else:
+    BASE_URL = "http://localhost:8000"
+
+# Security settings for production
+if IS_PRODUCTION:
+    # SSL and security headers
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # HSTS settings
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Cookie security
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
+    
+    # Additional security headers
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Logging configuration
+if IS_PRODUCTION:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{levelname} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
+        },
+        'root': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'loggers': {
+            'django': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'django.db.backends': {
+                'handlers': ['console'],
+                'level': 'ERROR',  # Only log database errors
+                'propagate': False,
+            },
+            'core': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+        },
+    }
+
+# Optional: OpenAI API Key for AI features
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+
+# Cache configuration for production (optional)
