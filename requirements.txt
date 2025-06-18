@@ -21,4 +21,5 @@ django-import-export[all]~=4.3.7
 rapidfuzz~=3.13.0
 django-auditlog~=3.1.2
 gunicorn~=21.2.0
-psycopg2-binary~=2.9.9  # For PostgreSQL on Railway
+psycopg2-binary~=2.9.9
+dj-database-url~=2.2.0
