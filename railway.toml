@@ -2,9 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "cd CarbonInsight && echo 'DEBUG: Environment variables:' && env | grep -E '(DATABASE|PG)' && echo 'DEBUG: Starting Django...' && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn CarbonInsight.wsgi:application --bind 0.0.0.0:$PORT"
-healthcheckPath = "/"
-healthcheckTimeout = 300
+startCommand = "cd CarbonInsight && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn CarbonInsight.wsgi:application --bind 0.0.0.0:$PORT"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
