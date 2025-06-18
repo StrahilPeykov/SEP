@@ -266,6 +266,7 @@ if IS_PRODUCTION:
     ])
 else:
     CORS_ALLOWED_ORIGINS = [
+        "https://sep-frontend-alpha.vercel.app",
         "http://localhost:3000",  # Next.js default port
         "http://localhost:8000",
         "http://127.0.0.1:3000",
