@@ -40,6 +40,15 @@ class ProductSerializer(WritableNestedModelSerializer):
             )
         ]
 
+    def _can_see_emissions(self, obj: Product) -> bool:
+        u = self.context['request'].user
+        sup = obj.supplier
+        return (
+                self.context.get('bypass_emission_permission_checks', False)
+                or sup.user_is_member(u)
+                or sup.auto_approve_product_sharing_requests
+        )
+
     def get_emission_total(self, obj: Product) -> Optional[float]:
         """
         Returns the emission total for this product.
@@ -49,8 +58,8 @@ class ProductSerializer(WritableNestedModelSerializer):
         Returns:
             total emission of the Product
         """
-        if (not obj.supplier.user_is_member(self.context['request'].user)
-                and not obj.supplier.auto_approve_product_sharing_requests):
+
+        if not self._can_see_emissions(obj):
             return None
         return obj.get_emission_trace().total
 
@@ -64,8 +73,7 @@ class ProductSerializer(WritableNestedModelSerializer):
             total non-biogenic emission of the Product
         """
 
-        if (not obj.supplier.user_is_member(self.context['request'].user)
-                and not obj.supplier.auto_approve_product_sharing_requests):
+        if not self._can_see_emissions(obj):
             return None
         return obj.get_emission_trace().total_non_biogenic
 
@@ -79,8 +87,7 @@ class ProductSerializer(WritableNestedModelSerializer):
             total biogenic emission of the Product
         """
 
-        if (not obj.supplier.user_is_member(self.context['request'].user)
-                and not obj.supplier.auto_approve_product_sharing_requests):
+        if not self._can_see_emissions(obj):
             return None
         return obj.get_emission_trace().total_biogenic
 

@@ -19,7 +19,7 @@ class TransportEmission(Emission):
     )
     weight = models.FloatField(
         validators=[MinValueValidator(0.0)],
-        help_text="Weight of the transported product in kg",
+        help_text="Weight of the transported product in tonnes",
     )
     reference = models.ForeignKey(
         "TransportEmissionReference",

@@ -80,7 +80,7 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',
 ]
 
-AXES_FAILURE_LIMIT = 3
+AXES_FAILURE_LIMIT = 10
 AXES_COOLOFF_TIME = timedelta(minutes=5)
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_PARAMETERS = ["username"]
@@ -172,7 +172,10 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler"
 }
 
-DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False}
+DRF_STANDARDIZED_ERRORS = {
+    "ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False,
+    "EXCEPTION_HANDLER_CLASS": "core.exceptions.DRFExceptionHandler",
+}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "CarbonInsight API",

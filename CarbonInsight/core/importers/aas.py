@@ -5,6 +5,7 @@ from typing import Iterable, Tuple
 
 from basyx.aas.adapter.aasx import DictSupplementaryFileContainer, AASXReader
 from basyx.aas.adapter.json import read_aas_json_file_into
+from basyx.aas.adapter.xml import read_aas_xml_file_into
 from basyx.aas.model import DictObjectStore, Property, MultiLanguageProperty, SubmodelElementCollection, \
     SubmodelElementList
 from aas_test_engines.file import *
@@ -131,17 +132,18 @@ def aas_to_emissions(objects: DictObjectStore) -> Tuple[Iterable[Emission], Iter
             logger.warning(f"Unknown emission source {source} when importing AAS")
             continue
 
-        emission.pcf_calculation_method = list(pcf_calculation_methods)[0]
-        emission.reference_impact_unit = reference_impact_unit
-        emission.quantity = quantity_of_measure
-        for lifecycle_stage in life_cycle_phases:
-            emission_override_factor = EmissionOverrideFactor()
-            emission_override_factor.emission = emission
-            emission_override_factor.lifecycle_stage = lifecycle_stage
-            emission_override_factor.co_2_emission_factor_biogenic = 0
-            emission_override_factor.co_2_emission_factor_non_biogenic = pcf_co_2_eq / len(life_cycle_phases)
-            emission_override_factors.append(emission_override_factor)
-        emissions.append(emission)
+        if emission is not None:
+            emission.pcf_calculation_method = list(pcf_calculation_methods)[0]
+            emission.reference_impact_unit = reference_impact_unit
+            emission.quantity = quantity_of_measure
+            for lifecycle_stage in life_cycle_phases:
+                emission_override_factor = EmissionOverrideFactor()
+                emission_override_factor.emission = emission
+                emission_override_factor.lifecycle_stage = lifecycle_stage
+                emission_override_factor.co_2_emission_factor_biogenic = 0
+                emission_override_factor.co_2_emission_factor_non_biogenic = pcf_co_2_eq / len(life_cycle_phases)
+                emission_override_factors.append(emission_override_factor)
+            emissions.append(emission)
 
     return emissions, emission_override_factors
 
@@ -158,6 +160,7 @@ def aas_objects_to_db(objects: DictObjectStore, supplier:Company) -> Product:
     """
     product = aas_to_product(objects)
     product.supplier = supplier
+    product.full_clean()
     product.save()
 
     emissions, emission_override_factors = aas_to_emissions(objects)
@@ -221,7 +224,7 @@ def aas_xml_to_db(file:BytesIO, supplier:Company) -> Product:
     validate_aas_xml(file)
 
     objects = DictObjectStore()
-    read_aas_json_file_into(objects, file)
+    read_aas_xml_file_into(objects, file)
 
     return aas_objects_to_db(objects, supplier)
 

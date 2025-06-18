@@ -147,3 +147,23 @@ class ProductBoMLineItemSerializer(serializers.ModelSerializer):
         if 'line_item_product' in validated_data:
             raise serializers.ValidationError({"line_item_product_id": "This field cannot be updated after creation."})
         return super().update(instance, validated_data)
+
+    def to_representation(self, instance: ProductBoMLineItem) -> dict:
+        """
+        Every time DRF is about to render this line-item,
+        set the nested ProductSerializer’s bypass flag
+        according to the sharing status.
+
+        Args:
+            instance: ProductBoMLineItem instance
+        Returns:
+            Serialized representation of the instance
+        """
+        accepted = (
+            instance.product_sharing_request_status
+            == ProductSharingRequestStatus.ACCEPTED
+        )
+        # flip its bypass_emission_permission_checks attribute
+        self.context['bypass_emission_permission_checks'] = accepted
+        # and let DRF do the rest
+        return super().to_representation(instance)

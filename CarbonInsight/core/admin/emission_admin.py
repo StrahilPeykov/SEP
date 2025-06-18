@@ -25,7 +25,6 @@ class EmissionBoMLinkAdminInline(admin.TabularInline):
     verbose_name = "BoM line item link"
     verbose_name_plural = "BoM line item links"
 
-@admin.register(Emission)
 class EmissionAdmin(PolymorphicParentModelAdmin):
     """
     Defines the fields to be presented and how they are shown in the admin panel for Emission.
@@ -35,9 +34,21 @@ class EmissionAdmin(PolymorphicParentModelAdmin):
     base_model = Emission  # Optional, explicitly set here.
     child_models = (ProductionEnergyEmission, TransportEmission, UserEnergyEmission)
     list_display = ("parent_product", "get_emission_total", "get_emission_total_biogenic",
-                    "get_emission_total_non_biogenic", "pcf_calculation_method")
+                    "get_emission_total_non_biogenic", "get_pcf_calculation_method")
     list_filter = (PolymorphicChildModelFilter,)  # This is optional.
     inlines = [EmissionBoMLinkAdminInline, EmissionOverrideFactorInline]
+
+    def get_pcf_calculation_method(self, emission:Emission) -> str:
+        """
+        Returns the pcf_calculation_method of the Emission object.
+
+        Args:
+            emission: Emission object.
+        Returns:
+            pcf_calculation_method of the Emission object
+            (the raw stored value, not the display name).
+        """
+        return emission.pcf_calculation_method
 
     def get_emission_total(self, emission:Emission) -> float:
         """
@@ -90,43 +101,16 @@ class EmissionChildAdmin(PolymorphicChildModelAdmin):
     # By using these `base_...` attributes instead of the regular ModelAdmin `form` and `fieldsets`,
     # the additional fields of the child models are automatically added to the admin form.
 
-    def get_emission_total(self, emission:Emission) -> float:
-        """
-        Returns the emission total for provided Emission object.
+    get_pcf_calculation_method = EmissionAdmin.get_pcf_calculation_method
+    get_pcf_calculation_method.short_description = "PCF calc method"
 
-        Args:
-            emission: Emission object.
-        Returns:
-            total emission of the Emission object
-        """
-
-        return emission.get_emission_trace().total
+    get_emission_total = EmissionAdmin.get_emission_total
     get_emission_total.short_description = "Total emissions"
 
-    def get_emission_total_non_biogenic(self, emission:Emission) -> float:
-        """
-        Returns the total non-biogenic emission for provided Emission object.
-
-        Args:
-            emission: Emission object.
-        Returns:
-            total non-biogenic emission of the Emission object
-        """
-
-        return emission.get_emission_trace().total_non_biogenic
+    get_emission_total_non_biogenic = EmissionAdmin.get_emission_total_non_biogenic
     get_emission_total_non_biogenic.short_description = "Total non-biogenic emissions"
 
-    def get_emission_total_biogenic(self, emission:Emission) -> float:
-        """
-        Returns the total biogenic emission for provided Emission object.
-
-        Args:
-            emission: Emission object.
-        Returns:
-            total biogenic emission of the Emission object
-        """
-
-        return emission.get_emission_trace().total_biogenic
+    get_emission_total_biogenic = EmissionAdmin.get_emission_total_biogenic
     get_emission_total_biogenic.short_description = "Total biogenic emissions"
 
 @admin.register(ProductionEnergyEmission)

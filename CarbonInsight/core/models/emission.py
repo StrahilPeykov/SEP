@@ -25,7 +25,16 @@ class Emission(PolymorphicModel):
         default=PcfCalculationMethod.ISO_14040_ISO_14044,
     )
 
+    """
+    Needed to ensure the deletion collector works with polymorphic models.
+    See https://stackoverflow.com/a/70083054
+    and https://github.com/denisorehovsky/django-rest-polymorphic/issues/29#issuecomment-652395609
+    and https://github.com/jazzband/django-polymorphic/issues/34#issuecomment-1027866872
+    """
+    non_polymorphic = models.Manager()
+
     class Meta:
+        base_manager_name = "non_polymorphic"
         verbose_name = "Emission"
         verbose_name_plural = "Emissions"
 

@@ -25,28 +25,18 @@ class ReferenceImpactUnit(models.TextChoices):
         Returns:
             AAS-compatible shorthand name of the ReferenceImpactUnit
         """
-
-        match self:
-            case ReferenceImpactUnit.GRAM:
-                return "g"
-            case ReferenceImpactUnit.KILOGRAM:
-                return "kg"
-            case ReferenceImpactUnit.TON:
-                return "t"
-            case ReferenceImpactUnit.MILLILITER:
-                return "ml"
-            case ReferenceImpactUnit.LITER:
-                return "l"
-            case ReferenceImpactUnit.CUBIC_METER:
-                return "cbm"
-            case ReferenceImpactUnit.SQUARE_METER:
-                return "qm"
-            case ReferenceImpactUnit.PIECE:
-                return "piece"
-            case ReferenceImpactUnit.KILOWATT_HOUR:
-                return "kWh"
-            case _:
-                return "Other"
+        mapping = {
+            ReferenceImpactUnit.GRAM:"g",
+            ReferenceImpactUnit.KILOGRAM:"kg",
+            ReferenceImpactUnit.TON:"t",
+            ReferenceImpactUnit.MILLILITER:"ml",
+            ReferenceImpactUnit.LITER:"l",
+            ReferenceImpactUnit.CUBIC_METER:"cbm",
+            ReferenceImpactUnit.SQUARE_METER:"qm",
+            ReferenceImpactUnit.PIECE:"piece",
+            ReferenceImpactUnit.KILOWATT_HOUR:"kWh"
+        }
+        return mapping.get(self, "Other")
 
     def get_aas_value_id(self) -> str:
         """
@@ -55,25 +45,15 @@ class ReferenceImpactUnit(models.TextChoices):
         Returns:
             AAS-compatible value ID of the ReferenceImpactUnit
         """
-
-        match self:
-            case ReferenceImpactUnit.GRAM:
-                return "0173-1#07-ABZ596#003"
-            case ReferenceImpactUnit.KILOGRAM:
-                return "0173-1#07-ABZ597#003"
-            case ReferenceImpactUnit.TON:
-                return "0173-1#07-ABZ598#003"
-            case ReferenceImpactUnit.MILLILITER:
-                return "0173-1#07-ABZ599#003"
-            case ReferenceImpactUnit.LITER:
-                return "0173-1#07-ABZ600#003"
-            case ReferenceImpactUnit.CUBIC_METER:
-                return "0173-1#07-ABZ601#003"
-            case ReferenceImpactUnit.SQUARE_METER:
-                return "0173-1#07-ABZ602#003"
-            case ReferenceImpactUnit.PIECE:
-                return "0173-1#07-ABZ603#003"
-            case ReferenceImpactUnit.KILOWATT_HOUR:
-                return "0173-1#07-ACB997#001"
-            case _:
-                return "Other"
+        mapping = {
+            ReferenceImpactUnit.GRAM:"0173-1#07-ABZ596#003",
+            ReferenceImpactUnit.KILOGRAM:"0173-1#07-ABZ597#003",
+            ReferenceImpactUnit.TON:"0173-1#07-ABZ598#003",
+            ReferenceImpactUnit.MILLILITER:"0173-1#07-ABZ599#003",
+            ReferenceImpactUnit.LITER:"0173-1#07-ABZ600#003",
+            ReferenceImpactUnit.CUBIC_METER:"0173-1#07-ABZ601#003",
+            ReferenceImpactUnit.SQUARE_METER:"0173-1#07-ABZ602#003",
+            ReferenceImpactUnit.PIECE:"0173-1#07-ABZ603#003",
+            ReferenceImpactUnit.KILOWATT_HOUR:"0173-1#07-ACB997#001"
+        }
+        return mapping.get(self, "Other")

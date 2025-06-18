@@ -9,10 +9,6 @@ omit =
     */migrations/*
     # Exclude __init__.py files
     */__init__.py
-    # Exclude enums
-    core/models/lifecycle_stage.py
-    core/models/pcf_calculation_method.py
-    core/models/reference_impact_unit.py
     # Exclude AI service because they either cost money to test or don't have consistent returns
     core/services/ai_service.py
     # Exclude Django-generated manage.py
