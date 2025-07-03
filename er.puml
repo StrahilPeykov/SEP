@@ -1,0 +1,340 @@
+@startuml
+left to right direction
+
+entity  auditlog_logentry{
+ * id : INTEGER NOT NULL
+--
+    action : INTEGER NOT NULL
+    actor_email : VARCHAR<254>
+    actor_id : BIGINT
+    additional_data : TEXT
+    changes : TEXT
+    changes_text : TEXT NOT NULL
+    cid : VARCHAR<255>
+    content_type_id : INTEGER NOT NULL
+    object_id : BIGINT
+    object_pk : VARCHAR<255> NOT NULL
+    object_repr : TEXT NOT NULL
+    remote_addr : CHAR<39>
+    remote_port : INTEGER
+    serialized_data : TEXT
+    timestamp : DATETIME NOT NULL
+}
+entity  django_content_type{
+ * id : INTEGER NOT NULL
+--
+    app_label : VARCHAR<100> NOT NULL
+    model : VARCHAR<100> NOT NULL
+}
+entity  core_user{
+ * id : INTEGER NOT NULL
+--
+    date_joined : DATETIME NOT NULL
+    email : VARCHAR<254> NOT NULL
+    first_name : VARCHAR<255> NOT NULL
+    is_active : BOOLEAN NOT NULL
+    is_staff : BOOLEAN NOT NULL
+    is_superuser : BOOLEAN NOT NULL
+    last_login : DATETIME
+    last_name : VARCHAR<255> NOT NULL
+    password : VARCHAR<128> NOT NULL
+    username : VARCHAR<150> NOT NULL
+}
+entity  auth_group{
+ * id : INTEGER NOT NULL
+--
+    name : VARCHAR<150> NOT NULL
+}
+entity  auth_group_permissions{
+ * id : INTEGER NOT NULL
+--
+    group_id : INTEGER NOT NULL
+    permission_id : INTEGER NOT NULL
+}
+entity  auth_permission{
+ * id : INTEGER NOT NULL
+--
+    codename : VARCHAR<100> NOT NULL
+    content_type_id : INTEGER NOT NULL
+    name : VARCHAR<255> NOT NULL
+}
+entity  axes_accessattempt{
+ * id : INTEGER NOT NULL
+--
+    attempt_time : DATETIME NOT NULL
+    failures_since_start : INTEGER NOT NULL
+    get_data : TEXT NOT NULL
+    http_accept : VARCHAR<1025> NOT NULL
+    ip_address : CHAR<39>
+    path_info : VARCHAR<255> NOT NULL
+    post_data : TEXT NOT NULL
+    user_agent : VARCHAR<255> NOT NULL
+    username : VARCHAR<255>
+}
+entity  axes_accessfailurelog{
+ * id : INTEGER NOT NULL
+--
+    attempt_time : DATETIME NOT NULL
+    http_accept : VARCHAR<1025> NOT NULL
+    ip_address : CHAR<39>
+    locked_out : BOOLEAN NOT NULL
+    path_info : VARCHAR<255> NOT NULL
+    user_agent : VARCHAR<255> NOT NULL
+    username : VARCHAR<255>
+}
+entity  axes_accesslog{
+ * id : INTEGER NOT NULL
+--
+    attempt_time : DATETIME NOT NULL
+    http_accept : VARCHAR<1025> NOT NULL
+    ip_address : CHAR<39>
+    logout_time : DATETIME
+    path_info : VARCHAR<255> NOT NULL
+    session_hash : VARCHAR<64> NOT NULL
+    user_agent : VARCHAR<255> NOT NULL
+    username : VARCHAR<255>
+}
+entity  core_aiconversationlog{
+ * id : INTEGER NOT NULL
+--
+    created_at : DATETIME NOT NULL
+    instructions : TEXT NOT NULL
+    product_id : BIGINT NOT NULL
+    response : TEXT NOT NULL
+    user_id : BIGINT NOT NULL
+    user_prompt : TEXT NOT NULL
+}
+entity  core_product{
+ * id : INTEGER NOT NULL
+--
+    description : TEXT NOT NULL
+    family : VARCHAR<255> NOT NULL
+    is_public : BOOLEAN NOT NULL
+    manufacturer_city : VARCHAR<255> NOT NULL
+    manufacturer_country : VARCHAR<2> NOT NULL
+    manufacturer_name : VARCHAR<255> NOT NULL
+    manufacturer_street : VARCHAR<255> NOT NULL
+    manufacturer_zip_code : VARCHAR<255> NOT NULL
+    name : VARCHAR<255> NOT NULL
+    pcf_calculation_method : VARCHAR<255> NOT NULL
+    reference_impact_unit : VARCHAR<255> NOT NULL
+    sku : VARCHAR<255> NOT NULL
+    supplier_id : BIGINT NOT NULL
+    year_of_construction : INTEGER NOT NULL
+}
+entity  core_company{
+ * id : INTEGER NOT NULL
+--
+    auto_approve_product_sharing_requests : BOOLEAN NOT NULL
+    business_registration_number : VARCHAR<255> NOT NULL
+    is_reference : BOOLEAN NOT NULL
+    name : VARCHAR<255> NOT NULL
+    vat_number : VARCHAR<255> NOT NULL
+}
+entity  core_companymembership{
+ * id : INTEGER NOT NULL
+--
+    company_id : BIGINT NOT NULL
+    date_joined : DATETIME NOT NULL
+    user_id : BIGINT NOT NULL
+}
+entity  core_emission{
+ * id : INTEGER NOT NULL
+--
+    parent_product_id : BIGINT NOT NULL
+    pcf_calculation_method : VARCHAR<255> NOT NULL
+    polymorphic_ctype_id : INTEGER
+    quantity : REAL NOT NULL
+}
+entity  core_emissionbomlink{
+ * id : INTEGER NOT NULL
+--
+    emission_id : BIGINT NOT NULL
+    line_item_id : BIGINT NOT NULL
+}
+entity  core_productbomlineitem{
+ * id : INTEGER NOT NULL
+--
+    line_item_product_id : BIGINT NOT NULL
+    parent_product_id : BIGINT NOT NULL
+    quantity : REAL NOT NULL
+}
+entity  core_emissionoverridefactor{
+ * id : INTEGER NOT NULL
+--
+    co_2_emission_factor_biogenic : REAL NOT NULL
+    co_2_emission_factor_non_biogenic : REAL NOT NULL
+    emission_id : BIGINT NOT NULL
+    lifecycle_stage : VARCHAR<255> NOT NULL
+}
+entity  core_productemissionoverridefactor{
+ * id : INTEGER NOT NULL
+--
+    co_2_emission_factor_biogenic : REAL NOT NULL
+    co_2_emission_factor_non_biogenic : REAL NOT NULL
+    lifecycle_stage : VARCHAR<255> NOT NULL
+    product_id : BIGINT NOT NULL
+}
+entity  core_productionenergyemission{
+ * emission_ptr_id : BIGINT NOT NULL
+--
+    energy_consumption : REAL NOT NULL
+    reference_id : BIGINT
+}
+entity  core_productionenergyemissionreference{
+ * id : INTEGER NOT NULL
+--
+    common_name : VARCHAR<255>
+    technical_name : VARCHAR<255>
+}
+entity  core_productionenergyemissionreferencefactor{
+ * id : INTEGER NOT NULL
+--
+    co_2_emission_factor_biogenic : REAL NOT NULL
+    co_2_emission_factor_non_biogenic : REAL NOT NULL
+    emission_reference_id : BIGINT NOT NULL
+    lifecycle_stage : VARCHAR<255> NOT NULL
+}
+entity  core_productsharingrequest{
+ * id : INTEGER NOT NULL
+--
+    created_at : DATETIME NOT NULL
+    product_id : BIGINT NOT NULL
+    requester_id : BIGINT NOT NULL
+    status : VARCHAR<20> NOT NULL
+}
+entity  core_transportemission{
+ * emission_ptr_id : BIGINT NOT NULL
+--
+    distance : REAL NOT NULL
+    reference_id : BIGINT
+    weight : REAL NOT NULL
+}
+entity  core_transportemissionreference{
+ * id : INTEGER NOT NULL
+--
+    common_name : VARCHAR<255>
+    technical_name : VARCHAR<255>
+}
+entity  core_transportemissionreferencefactor{
+ * id : INTEGER NOT NULL
+--
+    co_2_emission_factor_biogenic : REAL NOT NULL
+    co_2_emission_factor_non_biogenic : REAL NOT NULL
+    emission_reference_id : BIGINT NOT NULL
+    lifecycle_stage : VARCHAR<255> NOT NULL
+}
+entity  core_user_groups{
+ * id : INTEGER NOT NULL
+--
+    group_id : INTEGER NOT NULL
+    user_id : BIGINT NOT NULL
+}
+entity  core_user_user_permissions{
+ * id : INTEGER NOT NULL
+--
+    permission_id : INTEGER NOT NULL
+    user_id : BIGINT NOT NULL
+}
+entity  core_userenergyemission{
+ * emission_ptr_id : BIGINT NOT NULL
+--
+    energy_consumption : REAL NOT NULL
+    reference_id : BIGINT
+}
+entity  core_userenergyemissionreference{
+ * id : INTEGER NOT NULL
+--
+    common_name : VARCHAR<255>
+    technical_name : VARCHAR<255>
+}
+entity  core_userenergyemissionreferencefactor{
+ * id : INTEGER NOT NULL
+--
+    co_2_emission_factor_biogenic : REAL NOT NULL
+    co_2_emission_factor_non_biogenic : REAL NOT NULL
+    emission_reference_id : BIGINT NOT NULL
+    lifecycle_stage : VARCHAR<255> NOT NULL
+}
+entity  django_admin_log{
+ * id : INTEGER NOT NULL
+--
+    action_flag : INTEGER NOT NULL
+    action_time : DATETIME NOT NULL
+    change_message : TEXT NOT NULL
+    content_type_id : INTEGER
+    object_id : TEXT
+    object_repr : VARCHAR<200> NOT NULL
+    user_id : BIGINT NOT NULL
+}
+entity  django_migrations{
+ * id : INTEGER NOT NULL
+--
+    app : VARCHAR<255> NOT NULL
+    applied : DATETIME NOT NULL
+    name : VARCHAR<255> NOT NULL
+}
+entity  django_session{
+ * session_key : VARCHAR<40> NOT NULL
+--
+    expire_date : DATETIME NOT NULL
+    session_data : TEXT NOT NULL
+}
+entity  reversion_revision{
+ * id : INTEGER NOT NULL
+--
+    comment : TEXT NOT NULL
+    date_created : DATETIME NOT NULL
+    user_id : BIGINT
+}
+entity  reversion_version{
+ * id : INTEGER NOT NULL
+--
+    content_type_id : INTEGER NOT NULL
+    db : VARCHAR<191> NOT NULL
+    format : VARCHAR<255> NOT NULL
+    object_id : VARCHAR<191> NOT NULL
+    object_repr : TEXT NOT NULL
+    revision_id : INTEGER NOT NULL
+    serialized_data : TEXT NOT NULL
+}
+core_user::id |o--o{ auditlog_logentry::actor_id
+django_content_type::id ||--o{ auditlog_logentry::content_type_id
+auth_group::id ||--o{ auth_group_permissions::group_id
+auth_permission::id ||--o{ auth_group_permissions::permission_id
+django_content_type::id ||--o{ auth_permission::content_type_id
+core_product::id ||--o{ core_aiconversationlog::product_id
+core_user::id ||--o{ core_aiconversationlog::user_id
+core_company::id ||--o{ core_product::supplier_id
+core_user::id ||--o{ core_companymembership::user_id
+core_company::id ||--o{ core_companymembership::company_id
+django_content_type::id |o--o{ core_emission::polymorphic_ctype_id
+core_product::id ||--o{ core_emission::parent_product_id
+core_emission::id ||--o{ core_emissionbomlink::emission_id
+core_productbomlineitem::id ||--o{ core_emissionbomlink::line_item_id
+core_product::id ||--o{ core_productbomlineitem::line_item_product_id
+core_product::id ||--o{ core_productbomlineitem::parent_product_id
+core_emission::id ||--o{ core_emissionoverridefactor::emission_id
+core_product::id ||--o{ core_productemissionoverridefactor::product_id
+core_emission::id ||--|| core_productionenergyemission::emission_ptr_id
+core_productionenergyemissionreference::id |o--o{ core_productionenergyemission::reference_id
+core_productionenergyemissionreference::id ||--o{ core_productionenergyemissionreferencefactor::emission_reference_id
+core_company::id ||--o{ core_productsharingrequest::requester_id
+core_product::id ||--o{ core_productsharingrequest::product_id
+core_emission::id ||--|| core_transportemission::emission_ptr_id
+core_transportemissionreference::id |o--o{ core_transportemission::reference_id
+core_transportemissionreference::id ||--o{ core_transportemissionreferencefactor::emission_reference_id
+auth_group::id ||--o{ core_user_groups::group_id
+core_user::id ||--o{ core_user_groups::user_id
+core_user::id ||--o{ core_user_user_permissions::user_id
+auth_permission::id ||--o{ core_user_user_permissions::permission_id
+core_emission::id ||--|| core_userenergyemission::emission_ptr_id
+core_userenergyemissionreference::id |o--o{ core_userenergyemission::reference_id
+core_userenergyemissionreference::id ||--o{ core_userenergyemissionreferencefactor::emission_reference_id
+django_content_type::id |o--o{ django_admin_log::content_type_id
+core_user::id ||--o{ django_admin_log::user_id
+core_user::id |o--o{ reversion_revision::user_id
+django_content_type::id ||--o{ reversion_version::content_type_id
+reversion_revision::id ||--o{ reversion_version::revision_id
+footer [[https://www.plantuml.com/plantuml/svg/vLbjQnmt4Fv-l-8-5moncvJcA06dFTA0wu1nIxy9tQxsJl7kQYDfdLpY_lUCj7ktMhrVS8aX1cEpcXazywOPZMfIoQLaIqwtExaiAIU5fAnTB4WhgTmlbxWlgQpP5i4lVEFxBulbJqjQBbVBjzUtwpVhc-NrkzlbzTzNLukpiyKIVh0MuICOLnb7fC6q1f9_Bcz-__FovhUB5yzV6SjQ_kktRq32yBK4520KrwZ44iFYxVhVOQdOuNPBXESJakIJ7B_FCHHQ_hJtYs7lWhKIT4Hotn7aLr6HiSrxi9A3SVpStLcYlSoSTDmBZPE6IO90ORMkXVpyyfMvr34k9sXwHH1ESKq_az8nZwGD4H8t7Npyu_9sVVlsh_Mqutz7FvVlmMOCcIR8y7JNeHflYEd9ysVFB9KRLaOe9WW5umJre4jwOz2IeFUCjgJqwgLeV24sfwWe5nArk25Hbr61L4ZVAwhNxzvThI-l7G8mSLN5rlkESALRYAR600LoZBQ6GjDA4cI7XVZ8k1dNvnU_MaGAW2Nf_8NV6RYNExJbhE_ItZXP909ZD5G8o6YH5Z-mXFDn4XOWiY1CzEcz2uXTMpqdm3FFZQWF3OoVY0guWWY1fIHD9pCISI14Ajk32L51FlGSX0lQ5aI5h7cGp6ctH9f7oNnn9sMd4NPoPfSB9tCwVP219lPPrc5m16qh5Wzg9Y8mL3GZhAfIL8WdwFM9xxNuQ2D8n4So-YFOgcR57Ppih9UXmoFFcl-7lPwOeRPW97kR4omao72CxB3O6OI_s8NZqIofInwcS83S4mxf3fjdMRJW12fWYR0CsfEsGl9UjsB2cpuTPsK_xsFiLaHqm4p2oHTarQkmGTEv3PYb_GWZe-OJKN3QZRsbYwZ23QttgKhUzPkQ5g54Qd3RLr3iuGZWg50WO-BcrAnNxR7942DF5lGPDRYIa7YmpUW_GvAeqXNbIFSKHOKAN1TzhICJDKJkcDqvsp5J4KvKUQ5D1sXGtz8uRd7NnzVxhgjfBDZs17F4AjMx7aC-tWRem2iWEd6RSv_f9KFGwd9sVmnN97QOqtOBZVo77Xfi4OgeJG_L5euL8DnIW3TOiksRZUu5ex5wD6P8UDA3zrYczl9RfI6AIUneHlitieGTbDEjXyyJ2o39xjqwp5LNbZpdlY7CErRl6yQx7IrGuRHzckH3ZmVOg-ND-l8ggS-6DJLjxz9gaLcpwrC8v00WgBbP1XtjC-nF55iQmxH3shgPNZZLNf2CdDEIL7fYa1EbwEB8Z0OkjA5ggg7hmNpJ84SB_qQvSjnJaM9VrBe5t-PS2Km_FNNzSxLBjY1-zG4AQGdVxcVdm15b9mEdo25vDAyk5Nrpw2LS9OmoPanvCX4TcREEpaQL0q-Jg9ObANPWPrnxAKw5yzGYvSZWjVPZvinOhCTQ_IZjTKRth3UBDIwWYko5gKjaC0QjGolKxE_R0h-4vWCFhKHkkAkLZqGFXXDdieFjEwL06CSF6FkwezApiqUOiMMtPvfmkFwTCkDBpl1E1l5KgeIBvJibHmJ8ZvKTurC7BXlQehm1bYwhgAhnDXIR8qbqn3MyIy7zGeW1gUTbAZHArglcozFnXMV-eZIL4djAdPCzesaQkXqkgXcP2nVZQ8-7zVKzVF7Bd8gFoCO9dOPrcDRT4NFgyjpK-v3FdpeA6Q3keK4S1sdUSVE4WnCrgHjYyvxcFY8qpJ0hT1skxyPZlv5zEVRY6V_cmCbwhYWtvXpsvRdzUCPuW-EZ7JDSmuBIBwA3dIDG_U-VflkE9-1g1M8UsDaP--A-RQzMX-VdXUSzT61z2B5QPbrCprrpHjyZs6frAC0BwuagXtTMFDF8BVasRhDnDXdzishO_TW9srQEyur1lJ37JWxV4OSn1eniuqolChVny4rJhR15sII17Etfcmt5ZMhmsiEIXKKGu1o7HwkLCNrO1AOxQI7c_2YEt2VTDniwNSgtMc8-5WaR90GY92S9vE4XVWqte0pjvo9AVknyd4WBRs1sIoT9TysGcY8OshYx9f9vVXjNiAURSfQFR07Pld7kXm6dXE-HZZSy8bs3fEGzHEHb6jvVRUoBe55dmeVeZ7vsV8R9xHlVn1YfPp7sUKsBkzMzsGJy6ha2EOxr2NKzcvJu49EOwTj4_R7lCu6IRZlFPGluUjZ5RNmdXaJBuVIeBaAVzAW0eoly2W=={link to PlantUML server} Link to PlantUML server]]
+@enduml

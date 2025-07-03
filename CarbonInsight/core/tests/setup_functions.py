@@ -16,24 +16,30 @@ from core.models import EmissionOverrideFactor
 
 def paint_companies_setup(self):
     """
-    Generic setup function that consists of Paint companies. Simpler setup
+    Generic setup function that consists of Paint companies. Simpler setup of the two setup methods which is used for
+     tests that does not require many BoM items, emissions or overrides.
+
+    This test setup provides 2 users each for 3 different paint companies. Each company has 2 or 3 products that does
+     not contain any bom items, emissions or overrides.
     """
 
-    # Create two users
+    # Create two users for red company
     self.red_company_user1 = User.objects.create_user(username="1@redcompany.com", email="1@redcompany.com",
                                                       password="1234567890")
     self.red_company_user2 = User.objects.create_user(username="2@redcompany.com", email="2@redcompany.com",
                                                       password="1234567890")
+    # Create two users for blue company
     self.blue_company_user1 = User.objects.create_user(username="1@bluecompany.com", email="1@bluecompany.com",
                                                        password="1234567890")
     self.blue_company_user2 = User.objects.create_user(username="2@bluecompany.com", email="2@bluecompany.com",
                                                        password="1234567890")
+    # Create two users for green company
     self.green_company_user1 = User.objects.create_user(username="1@greencompany.com", email="1@greencompany.com",
                                                         password="1234567890")
     self.green_company_user2 = User.objects.create_user(username="2@greencompany.com", email="2@greencompany.com",
                                                         password="1234567890")
 
-    # Obtain JWT for user1
+    # Obtain JWT for user1 of red company
     url = reverse("token_obtain_pair")
     resp = self.client.post(
         url, {"username": "1@redcompany.com", "password": "1234567890"}, format="json"
@@ -51,32 +57,36 @@ def paint_companies_setup(self):
         auto_approve_product_sharing_requests=True
     )
 
-    # Create an existing company
+    # Create red company
     self.red_company = Company.objects.create(
         name="Red company BV",
         vat_number="VATRED",
         business_registration_number="NL123456"
     )
+    # Create green company
     self.green_company = Company.objects.create(
         name="Green company BV",
         vat_number="VATGREEN",
         business_registration_number="NL654321"
     )
+    # Create blue company
     self.blue_company = Company.objects.create(
         name="Blue company BV",
         vat_number="VATBLUE",
         business_registration_number="NL938321"
     )
 
-    # Add users to companies
+    # Add red user to red company
     CompanyMembership.objects.create(user=self.red_company_user1, company=self.red_company)
     CompanyMembership.objects.create(user=self.red_company_user2, company=self.red_company)
+    # Add blue user to blue company
     CompanyMembership.objects.create(user=self.blue_company_user1, company=self.blue_company)
     CompanyMembership.objects.create(user=self.blue_company_user2, company=self.blue_company)
+    # Add green user to green company
     CompanyMembership.objects.create(user=self.green_company_user1, company=self.green_company)
     CompanyMembership.objects.create(user=self.green_company_user2, company=self.green_company)
 
-    # Add Products
+    # Add red company products
     self.red_paint = Product.objects.create(
         name="Red paint",
         description="Red paint",
@@ -119,6 +129,7 @@ def paint_companies_setup(self):
         sku="12345678988",
         is_public=True
     )
+    # Add blue company products
     self.blue_paint = Product.objects.create(
         name="Blue paint",
         description="Blue paint",
@@ -161,6 +172,7 @@ def paint_companies_setup(self):
         sku="12345678999",
         is_public=True
     )
+    # Add green company products
     self.green_paint = Product.objects.create(
         name="Green Paint",
         description="Green Paint",
@@ -192,25 +204,41 @@ def paint_companies_setup(self):
 
 def tech_companies_setup(self):
     """
-    Generic setup function that consists of Tech companies. More complex setup
+    Generic setup function that consists of Tech companies and their products. More complex setup that includes BoM line
+     items, emissions linked to products and emission overrides for tests that require interlinked products and a full
+     BoM. In addition, this setup has accepted and rejected product sharing requests.
+
+    This method provides 4 tech companies with at least one user each as well as an admin user that can access all 4
+     companies. 3 of the companies has at least one product. Furthermore, this setup models an iphone produced by apple
+     which includes components from other companies which some of them does not have shared carbon footprint data.
+     Some of the components has linked transport, user energy and production energy emissions as well as emission
+     overrides.
     """
 
+    #Create admin user
     admin_user = User.objects.create_user(username="admin@example.com", email="admin@example.com",
                                           password="1234567890")
     admin_user.is_superuser = True
     admin_user.is_staff = True
     admin_user.save()
+
+    #Create apple users
     apple_user_1 = User.objects.create_user(username="apple1@apple.com", email="apple1@apple.com",
                                                 password="1234567890")
     apple_user_2 = User.objects.create_user(username="apple2@apple.com", email="apple2@apple.com",
                                                 password="1234567890")
+    #Create samsung users
     samsung_user_1 = User.objects.create_user(username="samsung1@samsung.com", email="samsung1@samsung.com",
                                                   password="1234567890")
+
+    #Create coring users
     corning_user_1 = User.objects.create_user(username="corning1@corning.com", email="corning1@corning.com",
                                                   password="1234567890")
+
+    #Create tsmc users
     tsmc_user_1 = User.objects.create_user(username="tsmc1@tsmc.com", email="tsmc1@tsmc.com", password="1234567890")
 
-    # Obtain JWT for user
+    # Obtain JWT for user1 of apple
     url = reverse("token_obtain_pair")
     response = self.client.post(
         url,
@@ -231,40 +259,48 @@ def tech_companies_setup(self):
         auto_approve_product_sharing_requests=True
     )
 
-    # Create test companies
+    # Create apple
     self.apple = Company.objects.create(
         name="Apple Inc.",
         vat_number="TEST123456",
         business_registration_number="REG123456"
     )
+
+    # Create samsung
     self.samsung = Company.objects.create(
         name="Samsung Electronics",
         vat_number="TEST654321",
         business_registration_number="REG654321"
     )
+    # Create coring
     corning = Company.objects.create(
         name="Corning Inc.",
         vat_number="TEST789012",
         business_registration_number="REG789012"
     )
+    # Create tsmc
     self.tsmc = Company.objects.create(
         name="Taiwan Semiconductor Manufacturing Company",
         vat_number="TEST345678",
         business_registration_number="REG345678"
     )
 
-    # Create company memberships
+    # Add admin to all companies
     CompanyMembership.objects.create(user=admin_user, company=self.apple)
     CompanyMembership.objects.create(user=admin_user, company=self.samsung)
     CompanyMembership.objects.create(user=admin_user, company=corning)
     CompanyMembership.objects.create(user=admin_user, company=self.tsmc)
+    #Add apple users to apple
     CompanyMembership.objects.create(user=apple_user_1, company=self.apple)
     CompanyMembership.objects.create(user=apple_user_2, company=self.apple)
+    #Add samsung users to samsung
     CompanyMembership.objects.create(user=samsung_user_1, company=self.samsung)
+    #Add coring users to coring
     CompanyMembership.objects.create(user=corning_user_1, company=corning)
+    #Add apple tsmc to tsmc
     CompanyMembership.objects.create(user=tsmc_user_1, company=self.tsmc)
 
-    #Reference products
+    #Create glass materials under reference company
     self.glass_material = Product.objects.create(
         name="Glass Reference",
         description="Glass Reference",
@@ -278,12 +314,7 @@ def tech_companies_setup(self):
         family="Reference",
         sku="N/A",
     )
-    ProductEmissionOverrideFactor.objects.create(
-        product=self.glass_material,
-        lifecycle_stage=LifecycleStage.A1,
-        co_2_emission_factor_biogenic=0.5,
-    )
-
+    #Create silicon materials under reference company
     self.silicon_material = Product.objects.create(
         name="Silicon Reference",
         description="Silicon Reference",
@@ -297,6 +328,14 @@ def tech_companies_setup(self):
         family="Reference",
         sku="N/A",
     )
+
+    #Add emission overrides to the glass material
+    ProductEmissionOverrideFactor.objects.create(
+        product=self.glass_material,
+        lifecycle_stage=LifecycleStage.A1,
+        co_2_emission_factor_biogenic=0.5,
+    )
+    #Add emission overrides to the silicon material
     ProductEmissionOverrideFactor.objects.create(
         product=self.silicon_material,
         lifecycle_stage=LifecycleStage.A2,
@@ -308,7 +347,7 @@ def tech_companies_setup(self):
         co_2_emission_factor_biogenic=0.2,
     )
 
-    # Add transport emission references
+    # Add air transport emission reference
     self.transport_air = TransportEmissionReference.objects.create(common_name="Air transport")
     TransportEmissionReferenceFactor.objects.create(
         emission_reference=self.transport_air,
@@ -320,7 +359,7 @@ def tech_companies_setup(self):
         lifecycle_stage=LifecycleStage.A4,
         co_2_emission_factor_biogenic=0.3,
     )
-
+    # Add road transport emission reference
     self.transport_road = TransportEmissionReference.objects.create(common_name="Road transport")
     TransportEmissionReferenceFactor.objects.create(
         emission_reference=self.transport_road,
@@ -328,7 +367,7 @@ def tech_companies_setup(self):
         co_2_emission_factor_biogenic=0.05,
     )
 
-    # Add production energy emission references
+    # Add assembly line production energy emission reference
     self.assembly_line_reference = ProductionEnergyEmissionReference.objects.create(common_name="Assembly line")
     ProductionEnergyEmissionReferenceFactor.objects.create(
         emission_reference=self.assembly_line_reference,
@@ -336,13 +375,14 @@ def tech_companies_setup(self):
         co_2_emission_factor_biogenic=0.4,
     )
 
-    # Add user energy emission references
+    # Add charging phone user energy emission reference
     self.charging_phone = UserEnergyEmissionReference.objects.create(common_name="Charging phone")
     UserEnergyEmissionReferenceFactor.objects.create(
         emission_reference=self.charging_phone,
         lifecycle_stage=LifecycleStage.A5,
         co_2_emission_factor_biogenic=0.2,
     )
+    # Add update processor user energy emission reference
     self.update_processor = UserEnergyEmissionReference.objects.create(common_name="Update processor")
     UserEnergyEmissionReferenceFactor.objects.create(
         emission_reference=self.update_processor,
@@ -350,7 +390,7 @@ def tech_companies_setup(self):
         co_2_emission_factor_biogenic=0.2,
     )
 
-    # Add products to companies
+    # Create tsmc products
     self.processor = Product.objects.create(
         name="A14 processor",
         description="Main processor used in iPhones",
@@ -364,6 +404,7 @@ def tech_companies_setup(self):
         family="Processor",
         sku="111222333444",
     )
+    # Create samsung products
     self.camera = Product.objects.create(
         name="Camera module",
         description="Camera module used in various phones",
@@ -390,6 +431,7 @@ def tech_companies_setup(self):
         family="Display",
         sku="0987654334",
     )
+    # Create apple products
     self.iphone = Product.objects.create(
         name="iPhone 17",
         description="Latest iPhone model",

@@ -34,35 +34,44 @@ from core.views.mixins.product_mixin import ProductMixin
 )
 @extend_schema_view(
     list=extend_schema(
+    #Extend schema with list method, allowing the listing of all user energy emissions of a specific product.
         tags=["Emissions/User energy"],
         summary="List all user energy emissions",
         description="Retrieve a list of all user energy emissions associated with a specific product."
     ),
+    #Extend schema with retrieve method, allowing the listing of a specific user energy emissions of a product.
     retrieve=extend_schema(
         tags=["Emissions/User energy"],
         summary="Retrieve a user energy emission",
         description="Retrieve the details of a specific user energy emission by its ID."
     ),
+    #Extend schema with create method, allowing the creation of a user energy emission for a specific product.
     create=extend_schema(
         tags=["Emissions/User energy"],
         summary="Create a user energy emission",
         description="Create a new user energy emission associated with a specific product."
     ),
+    #Extend schema with update method, allowing the update of a specific user energy emission of a product.
     update=extend_schema(
         tags=["Emissions/User energy"],
         summary="Update a user energy emission",
         description="Update the details of a specific user energy emission by its ID."
     ),
+    #Extend schema with partial_update method, allowing the partial update of a specific user energy emission of a
+    # product.
     partial_update=extend_schema(
         tags=["Emissions/User energy"],
         summary="Partially update a user energy emission",
         description="Partially update the details of a specific user energy emission by its ID."
     ),
+    #Extend schema with destroy method, allowing the deletion of a specific user energy emission of a product.
     destroy=extend_schema(
         tags=["Emissions/User energy"],
         summary="Delete a user energy emission",
         description="Delete a specific user energy emission by its ID."
     ),
+    #Extend schema with export_csv method, allowing the export of a specific user energy emission of a product in
+    # csv format.
     export_csv=extend_schema(
         tags=["Emissions/User energy"],
         summary="Export user energy emissions to CSV",
@@ -83,6 +92,8 @@ from core.views.mixins.product_mixin import ProductMixin
             (200, 'text/csv'): OpenApiTypes.STR,
         }
     ),
+    #Extend schema with export_xlsx method, allowing the export of a specific user energy emission of a product in
+    # xlsx format.
     export_xlsx=extend_schema(
         tags=["Emissions/User energy"],
         summary="Export user energy emissions to XLSX",
@@ -103,6 +114,8 @@ from core.views.mixins.product_mixin import ProductMixin
             (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
         }
     ),
+    #Extend schema with import_tubular method, allowing the import of user energy emissions for a product in
+    # .csv, .xls or .xlsx formats.
     import_tabular=extend_schema(
         tags=["Emissions/User energy"],
         summary="Import user energy emissions",
@@ -116,7 +129,8 @@ class UserEnergyEmissionViewSet(
     viewsets.ModelViewSet
 ):
     """
-    Manages CRUD operations and import/export for user energy emissions linked to a product.
+    Provides methods that manage CRUD operations and import/export for user energy emissions linked to a product in
+     order avoid duplicate code.
     """
     queryset = UserEnergyEmission.objects.all()
     serializer_class = UserEnergyEmissionSerializer

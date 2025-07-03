@@ -8,7 +8,7 @@ class ReferenceImpactUnit(models.TextChoices):
     """
     GRAM = "g", "Gram"
     KILOGRAM = "kg", "Kilogram"
-    TON = "t", "Ton"
+    TONNE = "t", "Tonne"
     MILLILITER = "ml", "Milliliter"
     LITER = "l", "Liter"
     CUBIC_METER = "m3", "Cubic meter"
@@ -28,7 +28,7 @@ class ReferenceImpactUnit(models.TextChoices):
         mapping = {
             ReferenceImpactUnit.GRAM:"g",
             ReferenceImpactUnit.KILOGRAM:"kg",
-            ReferenceImpactUnit.TON:"t",
+            ReferenceImpactUnit.TONNE: "t",
             ReferenceImpactUnit.MILLILITER:"ml",
             ReferenceImpactUnit.LITER:"l",
             ReferenceImpactUnit.CUBIC_METER:"cbm",
@@ -48,7 +48,7 @@ class ReferenceImpactUnit(models.TextChoices):
         mapping = {
             ReferenceImpactUnit.GRAM:"0173-1#07-ABZ596#003",
             ReferenceImpactUnit.KILOGRAM:"0173-1#07-ABZ597#003",
-            ReferenceImpactUnit.TON:"0173-1#07-ABZ598#003",
+            ReferenceImpactUnit.TONNE: "0173-1#07-ABZ598#003",
             ReferenceImpactUnit.MILLILITER:"0173-1#07-ABZ599#003",
             ReferenceImpactUnit.LITER:"0173-1#07-ABZ600#003",
             ReferenceImpactUnit.CUBIC_METER:"0173-1#07-ABZ601#003",

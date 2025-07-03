@@ -239,7 +239,7 @@ def product_to_aas(product: 'Product') -> Tuple[str | Iterable[str], DictObjectS
             ),)
         ),
         value_type=model.datatypes.String,
-        value="2099",
+        value=str(product.year_of_construction),
     )
     dn_submodel.submodel_element.add(year_of_construction)
 

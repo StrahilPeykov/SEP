@@ -2,7 +2,8 @@ from django.db import models
 
 class AIConversationLog(models.Model):
     """
-    Model for AI advice chatlogs
+    Class modeling AI conversation logs for AI advice. Facilitates the logging of AI advices for reducing carbon
+    footprint of a product for future reference.
     """
     user = models.ForeignKey(
         "User",

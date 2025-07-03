@@ -23,10 +23,24 @@ from core.resources.emission_resources import EmissionResource
 T = TypeVar('T', bound=ModelViewSet)
 
 class EmissionImportExportMixin:
+    """
+    Provides generalized methods for import and export of emissions for supported filetypes to avoid duplicate code.
+     Provides export methods for .csv and .xlsx as well as an import method that parses .csv, .xls and .xlsx
+    """
+
     emission_import_export_resource:Type[EmissionResource] = None
 
     @action(detail=False, methods=["get"],url_path="export/csv")
     def export_csv(self:T, request, *args, **kwargs):
+        """
+        Facilitates export of emissions for .csv file type.
+
+        Args:
+            request: request that arrives at the server that contains parameters
+        Returns:
+            .csv file
+        """
+
         # Check if template is requested
         if request.query_params.get("template", "false").lower() == "true":
             queryset = self.get_queryset()[:0]  # Empty queryset for template
@@ -45,6 +59,15 @@ class EmissionImportExportMixin:
 
     @action(detail=False, methods=["get"],url_path="export/xlsx")
     def export_xlsx(self:T, request, *args, **kwargs):
+        """
+        Facilitates export of emissions for .xlsx file type.
+
+        Args:
+            request: request that arrives at the server that contains parameters
+        Returns:
+            .xlsx file
+        """
+
         # Check if template is requested
         if request.query_params.get("template", "false").lower() == "true":
             queryset = self.get_queryset()[:0]  # Empty queryset for template
@@ -70,6 +93,17 @@ class EmissionImportExportMixin:
         filter_backends=[]
     )
     def import_tabular(self:T, request, *args, **kwargs):
+        """
+        Facilitates import of emissions from .csv, .xls and .xlsx file types.
+
+        Args:
+            request: request that arrives at the server that contains parameters and the file
+        Returns:
+            HTTP 201 response
+        Raises:
+            ValidationError
+        """
+
         if 'file' not in request.FILES or len(request.FILES) != 1:
             raise ValidationError({"file": "Please upload exactly one file under the 'file' key."})
 

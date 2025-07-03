@@ -1,4 +1,4 @@
-@startuml Carbon Insight Class Diagram
+@startuml CarbonInsight Class Diagram
 
 abstract class AbstractUser {
   - id: String
@@ -7,44 +7,7 @@ abstract class AbstractUser {
   - email: String
 }
 
-class Product {
-  - id: String
-  - name: String
-  - description: String
-  - manufacturer: Company
-  - emissions: List<Emission>
-  - co_2_emission_override: dict<LifecycleStage, float>
-  - parts: List<ProductBoMLineItem>
-  - is_public: boolean
-  + addPart(product: Product, quantity: float)
-  + removePart(product: Product)
-  + updatePartQuantity(product: Product, quantity: float)
-  + calculateEmissions(): Optional<dict<LifecycleStage, float>>
-  + generateDPP(): DigitalProductPassport
-  + exportProduct(product: Product, format: FileFormat): StreamIO
-  - exportAASX(): StreamIO
-  - exportXML(): StreamIO
-  - exportJSON(): StreamIO
-  - exportCSV(): StreamIO
-  - exportXLSX(): StreamIO
-  - exportPDF(): StreamIO
-}
-
-abstract class Emission {
-  - id: String
-  - co_2_emission_override: dict<LifecycleStage, float>
-  + calculateEmissions(): dict<LifecycleStage, float>
-}
-
-LifecycleStage "1" --> "*" Emission
-
 class User extends AbstractUser {
-}
-
-class CompanyMembership {
-  - id: String
-  - company: Company
-  - user: User
 }
 
 class Company {
@@ -53,66 +16,93 @@ class Company {
   - vat_number: String
   - business_registration_number: String
   - products: List<Product>
-  + hasAuthorization(user: User): boolean
-  + getEmissionStats(): EmissionStats
+  - is_reference: boolean
+  - auto_approve_product_sharing_requests: boolean
+  + user_is_member(user: User): boolean
+  + companies_using_count(): integer
+  + products_using_count(): integer
+  + total_emissions_across_products(): float
+
 }
 
-class MaterialEmissionReference {
+class CompanyMembership {
+  - id: String
+  - company: Company
+  - user: User
+  - date_joined: DateTime
+}
+
+class Product {
+  - id: String
   - name: String
-  - co_2_factors: dict<LifecycleStage, float>
-}
-
-class MaterialEmission extends Emission {
-  - weight: float
-  - reference: MaterialEmissionReference
-  + calculateEmissions(): dict<LifecycleStage, float>
-}
-
-MaterialEmission "*" --> "1" MaterialEmissionReference : references
-
-class ProductBoMLineItem {
-  - product: Product
-  - quantity: float
+  - supplier: Company
+  - description: String
+  - manufacturer_name: String
+  - manufacturer_country: Country
+  - manufacturer_city: String
+  - manufacturer_street: String
+  - manufacturer_zip_code: String
+  - year_of_construction: integer
+  - family: String
+  - sku: String
+  - reference_impact_unit: ReferenceImpactUnit
+  - pcf_calculation_method: PcfCalculationMethod
   - emissions: List<Emission>
+  - is_public: boolean
+  + request(requester: Company, user: User): ProductSharingRequest
+  + get_emission_trace(): EmissionTrace
 }
 
-ProductBoMLineItem "1" --> "*" Emission : has
+enum PcfCalculationMethod{
+  EN_15804
+  GHG_PROTOCOL
+  IEC_TS_63058
+  IEC_63366
+  Rest can be found in the IDTA Carbon Footprint
+  Submodel Template 1.0 pdf.
+  + get_aas_value(): String
+  + get_aas_value_id(): String
+  }
 
-class TransportEmission extends Emission {
-  - distance: float
-  - weight: float
-  - reference: TransportEmissionReference
-  + calculateEmissions(): dict<LifecycleStage, float>
+enum ReferenceImpactUnit {
+  GRAM
+  KILOGRAM
+  TONNE
+  MILLILITER
+  LITER
+  CUBIC_METER
+  SQUARE_METER
+  PIECE
+  KILLOWATT_HOUR
+  OTHER
+  + get_aas_value(): String
+  + get_aas_value_id(): String
 }
 
-class ProductionEnergyEmission extends Emission {
-  - energy_consumption: float
-  - reference: ProductionEnergyEmissionReference
-  + calculateEmissions(): dict<LifecycleStage, float>
+class ProductEmissionOverrideFactor {
+  - product: Product
+  - lifecycle_stage: LifecycleStage
+  - co_2_emission_factor_biogenic: float
+  - co_2_emission_factor_non_biogenic: float
 }
 
-class UserEnergyEmission extends Emission {
-  - energy_consumption: float
-  - reference: UserEnergyEmissionReference
-  + calculateEmissions(): dict<LifecycleStage, float>
-}
-
-class EndOfLifeEmission extends Emission {
-  - weight: float
-  - reference: EndOfLifeEmissionReference
-  + calculateEmissions(): dict<LifecycleStage, float>
+enum LifecycleStage {
+  A1-4
+  B1-7
+  C1-4
+  D
+  + get_aas_value(): String
+  + get_aas_value_id(): String
+  + from_aas_value_id(aas_value_id: String): LifecycleStage
 }
 
 class ProductSharingRequest {
   - id: String
   - product: Product
   - requester: Company
-  - provider: Company
   - status: ProductSharingRequestStatus
   - created_at: Date
-  - updated_at: Date
-  + approve()
-  + reject()
+  + supplier: Company
 }
 
 enum ProductSharingRequestStatus {
@@ -121,107 +111,179 @@ enum ProductSharingRequestStatus {
   REJECTED
 }
 
-enum FileFormat {
-  AASX
-  XML
-  JSON
-  CSV
-  XLSX
-  PDF
+class ProductBoMLineItem {
+  - parent_product: Product
+  - line_item_product: Product
+  - quantity: float
+  + product_sharing_request(): ProductSharingRequest
+  + product_sharing_request_status(): ProductSharingRequestStatus
+  + _creates_cycle(): boolean
 }
 
-class DigitalProductPassport {
+abstract class Emission {
   - id: String
-  - product: Product
-  - creation_date: Date
-  - version: String
-  - metadata: Map<String, String>
-  + generateAASX(): File
-  + export(format: String): File
-  + validate(): boolean
+  - parent_product: Product
+  - quantity: float
+  - pcf_calculation_method: PcfCalculationMethod
+  + get_emission_trace(): EmissionTrace
+  + _get_emission_trace(): EmissionTrace
 }
 
-class EmissionStats {
-  - total_emissions: float
-  - emissions_by_category: Map<String, float>
-  - circularity_index: float
-  - environmental_cost: float
-  + generateReport(): File
+class EmissionOverrideFactor {
+  - emission: Emission
+  - lifecycle_stage: LifecycleStage
+  - co_2_emission_factor_biogenic: float
+  - co_2_emission_factor_non_biogenic: float
 }
 
-class ProductImporter {
-  + importProduct(file: File, format: FileFormat)
-  + validateProductData(data: Any): boolean
+class EmissionBoMLink {
+  - emission: Emission
+  - line_item: ProductBoMLineItem
 }
 
-class AIRecommendationEngine {
-  + generateRecommendations(product: Product): List<Recommendation>
-  + analyzeSupplyChain(product: Product): List<Recommendation>
-  + estimateEmissionReductions(recommendations: List<Recommendation>): Map<Recommendation, float>
-}
-
-class Recommendation {
-  - id: String
-  - description: String
-  - impact: float
-  - implementation_complexity: ComplexityLevel
-  - cost_estimate: float
-  - affected_areas: List<String>
-}
-
-enum ComplexityLevel {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-class ProductionEnergyEmissionReference {
-  - name: String
-  - co_2_factors:  dict<LifecycleStage, float>
-}
-
-class UserEnergyEmissionReference {
-  - name: String
-  - co_2_factors:  dict<LifecycleStage, float>
+class TransportEmission extends Emission {
+  - distance: float
+  - weight: float
+  - reference: TransportEmissionReference
+  + tkm(): float
+  + _get_emission_trace(): EmissionTrace
 }
 
 class TransportEmissionReference {
-  - name: String
-  - co_2_factors:  dict<LifecycleStage, float>
+  - common_name: String
+  - technical_name: String
+  + name(): String
+  + get_emission_trace(): EmissionTrace
 }
 
-class EndOfLifeEmissionReference {
-  - name: String
-  - landfill_percentage: float
-  - incinerated_percentage: float
-  - recycled_percentage: float
-  - reused_percentage: float
-  - co_2_factors:  dict<LifecycleStage, float>
+class TransportEmissionReferenceFactor {
+  - emission_reference: TransportEmissionReference
+  - lifecycle_stage: LifecycleStage
+  - co_2_emission_factor_biogenic: float
+  - co_2_emission_factor_non_biogenic: float
 }
 
-enum LifecycleStage {
-  A1-4
-  B1-7
-  C1-4
-  D
+class ProductionEnergyEmission extends Emission {
+  - energy_consumption: float
+  - reference: ProductionEnergyEmissionReference
+  + _get_emission_trace(): EmissionTrace
 }
 
-TransportEmission "*" --> "1" TransportEmissionReference : references
-ProductionEnergyEmission "*" --> "1" ProductionEnergyEmissionReference : references
-UserEnergyEmission "*" --> "1" UserEnergyEmissionReference : references
-EndOfLifeEmission "*" --> "1" EndOfLifeEmissionReference : references
+class ProductionEnergyEmissionReference {
+  - common_name: String
+  - technical_name: String
+  + name(): String
+  + get_emission_trace(): EmissionTrace
+}
+
+class ProductionEnergyEmissionReferenceFactor {
+  - emission_reference: ProductionEnergyEmissionReference
+  - lifecycle_stage: LifecycleStage
+  - co_2_emission_factor_biogenic: float
+  - co_2_emission_factor_non_biogenic: float
+}
+
+class UserEnergyEmission extends Emission {
+  - energy_consumption: float
+  - reference: UserEnergyEmissionReference
+  + _get_emission_trace(): EmissionTrace
+}
+
+class UserEnergyEmissionReference {
+  - common_name: String
+  - technical_name: String
+  + name(): String
+  + get_emission_trace(): EmissionTrace
+}
+
+class UserEnergyEmissionReferenceFactor {
+  - emission_reference: UserEnergyEmissionReference
+  - lifecycle_stage: LifecycleStage
+  - co_2_emission_factor_biogenic: float
+  - co_2_emission_factor_non_biogenic: float
+}
+
+class EmissionTrace {
+  - label: String
+  - reference_impact_unit: ReferenceImpactUnit
+  - related_object: Any
+  - methodology: String [0..1]
+  - pcf_calculation_method: PcfCalculationMethod
+  - emission_subtotal: Dict <LifecycleStage, EmissionSplit>
+  - children: Set <EmissionTraceChild>
+  - mentions: List <EmissionTraceMention>
+  + source(): String [0..1]
+  + sum_up(): None
+  + total_biogenic(): float
+  + total_non_biogenic(): float
+  + total(): float
+}
+
+class EmissionSplit {
+  - biogenic: float
+  - non_biogenic: float
+  + total(): float
+}
+
+class EmissionTraceMention {
+  - mention_class: EmissionTraceMentionClass
+  - message: String
+}
+
+class EmissionTraceChild {
+  - emission_trace: EmissionTrace
+  - quantity: float
+}
+
+enum EmissionTraceMentionClass {
+  INFORMATION
+  WARNING
+  ERROR
+}
+
+class AIConversationLog {
+  - user: User
+  - product: Product
+  - user_prompt: Text
+  - instructions: Text
+  - response: Text
+  - created_at: DateTime
+}
+
 CompanyMembership "*" --> "1" User : belongs to
 Company "1" *--> "*" CompanyMembership : has members
 Company "1" *--> "*" Product : owns
+Product "1" *--> "0..1" ProductEmissionOverrideFactor : has
 Product "1" *--> "*" Emission : has
-Product "1" *--> "*" ProductBoMLineItem : composed of
-ProductBoMLineItem "*" --> "1" Product : references
+Product "1" --> "1" ReferenceImpactUnit : has
+Product "1" --> "1" PcfCalculationMethod : has
+Product --> EmissionTrace : Generates
+Product "1" *--> "*" AIConversationLog : AI advice
+ProductEmissionOverrideFactor "1" --> "1" LifecycleStage : has stage
 ProductSharingRequest "*" --> "1" Product : references
 ProductSharingRequest "*" --> "1" Company : requested by
-ProductSharingRequest "*" --> "1" Company : provided by
-ProductSharingRequest "1" --> "1" ProductSharingRequestStatus : has status
-DigitalProductPassport "1" --> "1" Product : represents
-AIRecommendationEngine "1" --> "*" Recommendation : generates
-Recommendation "*" --> "1" ComplexityLevel : has
-ProductImporter --> Product: uses >
+ProductSharingRequest "*" --> "1" Company : supplied by
+ProductSharingRequest "1" --> "1" ProductSharingRequestStatus: has status
+Product "1" *--> "*" ProductBoMLineItem : composed of
+ProductBoMLineItem "*" --> "1" Product : references
+Emission "1" *--> "0..1" EmissionOverrideFactor : has
+Emission "1" --> "1" PcfCalculationMethod : has
+Emission --> EmissionTrace : Generates
+EmissionOverrideFactor "1" --> "1" LifecycleStage : has stage
+Emission "1" *--> "1" EmissionBoMLink : belonges to
+EmissionBoMLink "*" <--* "1" ProductBoMLineItem : has
+TransportEmission "*" --> "1" TransportEmissionReference : references
+TransportEmissionReference "1" *--> "1..*" TransportEmissionReferenceFactor : references
+TransportEmissionReferenceFactor "1" --> "1" LifecycleStage : has stage
+ProductionEnergyEmission "*" --> "1" ProductionEnergyEmissionReference : references
+ProductionEnergyEmissionReference "1" *--> "1..*" ProductionEnergyEmissionReferenceFactor: references
+ProductionEnergyEmissionReferenceFactor "1" --> "1" LifecycleStage : has stage
+UserEnergyEmission "*" --> "1" UserEnergyEmissionReference : references
+UserEnergyEmissionReference "1" *--> "1..*" UserEnergyEmissionReferenceFactor : references
+UserEnergyEmissionReferenceFactor "1" --> "1" LifecycleStage : has stage
+EmissionTrace "1" --> "1" PcfCalculationMethod : has
+EmissionTrace "1" *--> "*" EmissionSplit : stores
+EmissionTrace "1" *--> "*" EmissionTraceChild : has
+EmissionTrace "1" *--> "*" EmissionTraceMention : has
+EmissionTraceMention "1" --> "1" EmissionTraceMentionClass : has class
 @enduml

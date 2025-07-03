@@ -10,56 +10,26 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-import os
 from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Production/Railway environment detection
-RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT_NAME')
-IS_PRODUCTION = RAILWAY_ENVIRONMENT == 'production' or os.environ.get('RAILWAY_PUBLIC_DOMAIN') is not None
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# In production, this MUST be set as an environment variable
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', "django-insecure-dev-only-key-change-in-production")
+SECRET_KEY = "django-insecure-yq+7de17fa&(8wz#+_$mru=lfe-=t_@)!uwe)2fg@y-iqs+cce"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = not IS_PRODUCTION
+DEBUG = True
 
-# Get domains from environment variables
-RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN')
-
-# Allowed hosts configuration
-ALLOWED_HOSTS = []
-
-if IS_PRODUCTION:
-    # Add Railway domain if provided
-    if RAILWAY_PUBLIC_DOMAIN:
-        ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
-    
-    # Add frontend domain if provided (in case they point to the same server)
-    if FRONTEND_DOMAIN:
-        # Handle both www and non-www versions
-        ALLOWED_HOSTS.append(FRONTEND_DOMAIN)
-        if FRONTEND_DOMAIN.startswith('www.'):
-            ALLOWED_HOSTS.append(FRONTEND_DOMAIN[4:])  # Remove www.
-        else:
-            ALLOWED_HOSTS.append(f'www.{FRONTEND_DOMAIN}')  # Add www.
-    
-    # Always allow Railway subdomains and localhost for health checks
-    ALLOWED_HOSTS.extend([
-        'localhost',
-        '127.0.0.1',
-        '.railway.app',
-    ])
-else:
-    # Development: allow all hosts
-    ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -134,41 +104,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "CarbonInsight.wsgi.application"
 
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-import dj_database_url
 
-# Database configuration - simplified for Railway
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
-if DATABASE_URL:
-    # Production with DATABASE_URL (Railway)
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
-    }
-elif IS_PRODUCTION:
-    # Railway PostgreSQL (fallback)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('PGDATABASE'),
-            'USER': os.environ.get('PGUSER'),
-            'PASSWORD': os.environ.get('PGPASSWORD'),
-            'HOST': os.environ.get('PGHOST'),
-            'PORT': os.environ.get('PGPORT', '5432'),
-            'OPTIONS': {
-                'sslmode': 'require',
-            },
-        }
-    }
-else:
-    # Development fallback
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -188,6 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -199,40 +146,40 @@ USE_I18N = True
 
 USE_TZ = True
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = "django_static/"
+
+# Absolute filesystem path to the directory that will hold static files
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# For serving uploaded media:
+MEDIA_URL = "django_media/"
+MEDIA_ROOT = BASE_DIR / "mediafiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# DRF Configuration
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
-    "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.SearchFilter",
-        "rest_framework.filters.OrderingFilter",
-    ],
-    "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler",
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_SCHEMA_CLASS": "drf_standardized_errors.openapi.AutoSchema",
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler"
 }
 
-# DRF Spectacular configuration
+DRF_STANDARDIZED_ERRORS = {
+    "ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False,
+    "EXCEPTION_HANDLER_CLASS": "core.exceptions.DRFExceptionHandler",
+}
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "CarbonInsight API",
-    "DESCRIPTION": "API for Carbon Footprint Tracking and Analysis",
+    "DESCRIPTION": "API for companies to track their carbon emissions across their entire supply chain.",
     "VERSION": "1.0.0",
     "ENUM_NAME_OVERRIDES": {
         "ValidationErrorEnum": "drf_standardized_errors.openapi_serializers.ValidationErrorEnum.choices",
@@ -252,47 +199,14 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-# CORS settings - using environment variables
-CORS_ALLOWED_ORIGINS = []
-
-if IS_PRODUCTION:
-    # Add frontend domain if provided
-    if FRONTEND_DOMAIN:
-        if FRONTEND_DOMAIN.startswith('http'):
-            CORS_ALLOWED_ORIGINS.append(FRONTEND_DOMAIN)
-        else:
-            CORS_ALLOWED_ORIGINS.extend([
-                f"https://{FRONTEND_DOMAIN}",
-                f"http://{FRONTEND_DOMAIN}",  # Fallback for dev
-            ])
-            # Also add www/non-www variants
-            if FRONTEND_DOMAIN.startswith('www.'):
-                base_domain = FRONTEND_DOMAIN[4:]
-                CORS_ALLOWED_ORIGINS.extend([
-                    f"https://{base_domain}",
-                    f"http://{base_domain}",
-                ])
-            else:
-                CORS_ALLOWED_ORIGINS.extend([
-                    f"https://www.{FRONTEND_DOMAIN}",
-                    f"http://www.{FRONTEND_DOMAIN}",
-                ])
-    
-    # Always allow localhost for development/testing
-    CORS_ALLOWED_ORIGINS.extend([
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ])
-else:
-    # Development: allow common dev ports
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",  # Next.js default port
-        "http://localhost:8000",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8000",
-    ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Next.js default port
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+    "http://carboninsight.win.tue.nl",
+    "https://carboninsight.win.tue.nl",
+]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
@@ -342,92 +256,4 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = "core.User"
 
-# Base URL setting
-if IS_PRODUCTION and RAILWAY_PUBLIC_DOMAIN:
-    BASE_URL = f"https://{RAILWAY_PUBLIC_DOMAIN}"
-else:
-    BASE_URL = "http://localhost:8000"
-
-# Security settings for production
-if IS_PRODUCTION:
-    # SSL and security headers
-    SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
-    
-    # HSTS settings
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    
-    # Cookie security
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_HTTPONLY = True
-    CSRF_COOKIE_HTTPONLY = True
-    
-    # Additional security headers
-    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
-
-# Logging configuration
-if IS_PRODUCTION:
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'verbose': {
-                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-                'style': '{',
-            },
-            'simple': {
-                'format': '{levelname} {message}',
-                'style': '{',
-            },
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'verbose',
-            },
-        },
-        'root': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-        'loggers': {
-            'django': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            'django.db.backends': {
-                'handlers': ['console'],
-                'level': 'ERROR',  # Only log database errors
-                'propagate': False,
-            },
-            'core': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-        },
-    }
-
-# Optional: OpenAI API Key for AI features
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-
-# File upload settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
-
-# Cache configuration for production (optional)
-if IS_PRODUCTION:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
-        }
-    }
+BASE_URL = "https://carboninsight.win.tue.nl"

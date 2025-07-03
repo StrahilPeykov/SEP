@@ -5,11 +5,12 @@ Tests for the file exports API
 from io import BytesIO, TextIOWrapper
 
 from aas_test_engines.file import *
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from core.models import Product
+from core.models import Product, ProductionEnergyEmission, UserEnergyEmission, TransportEmission
 from core.tests.setup_functions import tech_companies_setup
 
 
@@ -45,9 +46,9 @@ class AASExportImportTests(APITestCase):
             sku="3472384759334",
         )
 
-    def test_export_json(self):
+    def test_export_import_json(self):
         """
-        Test for exporting product data in JSON format.
+        Test for exporting product data in JSON format and re-importing it back in.
         """
 
         url = reverse("product-export-aas-json", args=[self.apple.id, self.iphone.id])
@@ -65,6 +66,38 @@ class AASExportImportTests(APITestCase):
         result = check_json_file(text_buffer)
         result.dump()
         self.assertTrue(result.ok())
+
+        # Count the number of production energy/user energy/transport emissions in the original product
+        production_energy_emissions = ProductionEnergyEmission.objects.filter(parent_product=self.iphone).count()
+        user_energy_emissions = UserEnergyEmission.objects.filter(parent_product=self.iphone).count()
+        transport_emissions = TransportEmission.objects.filter(parent_product=self.iphone).count()
+
+        # Delete the product to simulate re-import and avoid conflicts
+        self.iphone.delete()
+
+        # Re-import the product
+        import_url = reverse("product-import-aas-json", args=[self.apple.id])
+        uploaded = SimpleUploadedFile("aas.json", buffer.getvalue(), content_type="application/json")
+        import_response = self.client.post(import_url, {"file": uploaded}, format="multipart")
+        self.assertEqual(import_response.status_code, status.HTTP_201_CREATED)
+
+        # Check if the product was re-imported correctly
+        reimported_product = Product.objects.get(id=import_response.data['id'])
+        self.assertEqual(reimported_product.name, self.iphone.name)
+
+        # Check if the emissions are also re-imported correctly
+        self.assertEqual(
+            ProductionEnergyEmission.objects.filter(parent_product=reimported_product).count(),
+            production_energy_emissions
+        )
+        self.assertEqual(
+            UserEnergyEmission.objects.filter(parent_product=reimported_product).count(),
+            user_energy_emissions
+        )
+        self.assertEqual(
+            TransportEmission.objects.filter(parent_product=reimported_product).count(),
+            transport_emissions
+        )
 
     def test_export_json_shared_product(self):
         """
@@ -129,9 +162,9 @@ class AASExportImportTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_export_xml(self):
+    def test_export_import_xml(self):
         """
-        Test for exporting a product data in XML format.
+        Test for exporting a product data in XML format and re-importing it back in.
         """
 
         url = reverse("product-export-aas-xml", args=[self.apple.id, self.iphone.id])
@@ -149,6 +182,38 @@ class AASExportImportTests(APITestCase):
         result = check_xml_file(text_buffer)
         result.dump()
         self.assertTrue(result.ok())
+
+        # Count the number of production energy/user energy/transport emissions in the original product
+        production_energy_emissions = ProductionEnergyEmission.objects.filter(parent_product=self.iphone).count()
+        user_energy_emissions = UserEnergyEmission.objects.filter(parent_product=self.iphone).count()
+        transport_emissions = TransportEmission.objects.filter(parent_product=self.iphone).count()
+
+        # Delete the product to simulate re-import and avoid conflicts
+        self.iphone.delete()
+
+        # Re-import the product
+        import_url = reverse("product-import-aas-xml", args=[self.apple.id])
+        uploaded = SimpleUploadedFile("aas.xml", buffer.getvalue(), content_type="application/xml")
+        import_response = self.client.post(import_url, {"file": uploaded}, format="multipart")
+        self.assertEqual(import_response.status_code, status.HTTP_201_CREATED)
+
+        # Check if the product was re-imported correctly
+        reimported_product = Product.objects.get(id=import_response.data['id'])
+        self.assertEqual(reimported_product.name, self.iphone.name)
+
+        # Check if the emissions are also re-imported correctly
+        self.assertEqual(
+            ProductionEnergyEmission.objects.filter(parent_product=reimported_product).count(),
+            production_energy_emissions
+        )
+        self.assertEqual(
+            UserEnergyEmission.objects.filter(parent_product=reimported_product).count(),
+            user_energy_emissions
+        )
+        self.assertEqual(
+            TransportEmission.objects.filter(parent_product=reimported_product).count(),
+            transport_emissions
+        )
 
     def test_export_xml_shared_product(self):
         """
@@ -213,9 +278,9 @@ class AASExportImportTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_export_aasx(self):
+    def test_export_import_aasx(self):
         """
-        Test for exporting a product data in AASX format.
+        Test for exporting a product data in AASX format and re-importing it back in.
         """
 
         url = reverse("product-export-aas-aasx", args=[self.apple.id, self.iphone.id])
@@ -231,6 +296,40 @@ class AASExportImportTests(APITestCase):
         result = check_aasx_file(buffer)
         result.dump()
         self.assertTrue(result.ok())
+
+
+        # Count the number of production energy/user energy/transport emissions in the original product
+        production_energy_emissions = ProductionEnergyEmission.objects.filter(parent_product=self.iphone).count()
+        user_energy_emissions = UserEnergyEmission.objects.filter(parent_product=self.iphone).count()
+        transport_emissions = TransportEmission.objects.filter(parent_product=self.iphone).count()
+
+        # Delete the product to simulate re-import and avoid conflicts
+        self.iphone.delete()
+
+        # Re-import the product
+        import_url = reverse("product-import-aas-aasx", args=[self.apple.id])
+        uploaded = SimpleUploadedFile("aas.aasx", buffer.getvalue(),
+                                      content_type="application/asset-administration-shell-package")
+        import_response = self.client.post(import_url, {"file": uploaded}, format="multipart")
+        self.assertEqual(import_response.status_code, status.HTTP_201_CREATED)
+
+        # Check if the product was re-imported correctly
+        reimported_product = Product.objects.get(id=import_response.data['id'])
+        self.assertEqual(reimported_product.name, self.iphone.name)
+
+        # Check if the emissions are also re-imported correctly
+        self.assertEqual(
+            ProductionEnergyEmission.objects.filter(parent_product=reimported_product).count(),
+            production_energy_emissions
+        )
+        self.assertEqual(
+            UserEnergyEmission.objects.filter(parent_product=reimported_product).count(),
+            user_energy_emissions
+        )
+        self.assertEqual(
+            TransportEmission.objects.filter(parent_product=reimported_product).count(),
+            transport_emissions
+        )
 
     def test_export_aasx_other_shared_product(self):
         """

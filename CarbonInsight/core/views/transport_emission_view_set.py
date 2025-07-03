@@ -32,35 +32,43 @@ from core.views.mixins.product_mixin import ProductMixin
 )
 @extend_schema_view(
     list=extend_schema(
+    #Extend schema with list method, allowing the listing of all transport emissions of a specific product.
         tags=["Emissions/Transport"],
         summary="List all transport emissions",
         description="Retrieve a list of all transport emissions associated with a specific product."
     ),
+    #Extend schema with retrieve method, allowing the listing of a specific transport emissions of a product.
     retrieve=extend_schema(
         tags=["Emissions/Transport"],
         summary="Retrieve a transport emission",
         description="Retrieve the details of a specific transport emission by its ID."
     ),
+    #Extend schema with create method, allowing the creation of a transport emission for a specific product.
     create=extend_schema(
         tags=["Emissions/Transport"],
         summary="Create a transport emission",
         description="Create a new transport emission associated with a specific product."
     ),
+    #Extend schema with update method, allowing the update of a specific transport emission of a product.
     update=extend_schema(
         tags=["Emissions/Transport"],
         summary="Update a transport emission",
         description="Update the details of a specific transport emission by its ID."
     ),
+    #Extend schema with partial_update method, allowing the partial update of a transport emission of a product.
     partial_update=extend_schema(
         tags=["Emissions/Transport"],
         summary="Partially update a transport emission",
         description="Partially update the details of a specific transport emission by its ID."
     ),
+    #Extend schema with destroy method, allowing the deletion of a specific transport emission of a product.
     destroy=extend_schema(
         tags=["Emissions/Transport"],
         summary="Delete a transport emission",
         description="Delete a specific transport emission by its ID."
     ),
+    #Extend schema with export_csv method, allowing the export of a specific transport emission of a product in csv
+    # format.
     export_csv=extend_schema(
         tags=["Emissions/Transport"],
         summary="Export transport emissions to CSV",
@@ -81,6 +89,8 @@ from core.views.mixins.product_mixin import ProductMixin
             (200, 'text/csv'): OpenApiTypes.STR,
         }
     ),
+    #Extend schema with export_xlsx method, allowing the export of a specific transport emission of a product in xlsx
+    # format.
     export_xlsx=extend_schema(
         tags=["Emissions/Transport"],
         summary="Export transport emissions to XLSX",
@@ -101,6 +111,8 @@ from core.views.mixins.product_mixin import ProductMixin
             (200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'): OpenApiTypes.BINARY,
         }
     ),
+    #Extend schema with import_tubular method, allowing the import of transport emissions for a product in
+    # .csv, .xls or .xlsx formats.
     import_tabular=extend_schema(
         tags=["Emissions/Transport"],
         summary="Import transport emissions",
@@ -114,7 +126,8 @@ class TransportEmissionViewSet(
     viewsets.ModelViewSet
 ):
     """
-    Manages CRUD operations and import/export for transport emissions linked to a product.
+    Provides methods that manage CRUD operations and import/export for transport emissions linked to a product in order
+     to avoid duplicate code.
     """
     queryset = TransportEmission.objects.all()
     serializer_class = TransportEmissionSerializer
